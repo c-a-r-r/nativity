@@ -1,0 +1,21 @@
+*.sqlite3            # SQLite DB (if used for local dev)
+*.log                # Log files
+media/               # User-uploaded media (if not storing in Git)
+staticfiles/         # Collected static files (e.g., via collectstatic)
+.env.*               # Any named env files like .env.dev or .env.local
+coverage/            # Coverage reports (from pytest or coverage.py)
+.vscode/             # VSCode config files
+*.pot
+*.mo
+
+npm-debug.log*
+.yarn/
+.yarnrc.*
+.pnp.*               # If using Plug’n’Play with yarn
+vite.config.*        # If using Vite (optional, depending on repo structure)
+
+
+*.tar                # Saved Docker images
+.dockerignore
+Dockerfile*
+docker-compose*.yml

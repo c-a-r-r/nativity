@@ -1,0 +1,604 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+* {
+    font-size: 13px;
+    font-weight: 400;
+    font-family: 'Roboto',"Montserrat", sans-serif;
+}
+body {
+    margin: 0;
+
+    background-color: #f4f4f4; /* Light background */
+    line-height: 1.6; /* Improve readability */
+    overflow-x: none; /* Prevent horizontal scrollbar */
+}
+
+/* --- Header --- */ 
+.app-header {
+    background-color: #dbdae8; /* Dark background */
+    color: rgb(0, 0, 0);
+    padding: 10px 20px; /* Keep consistent vertical padding */
+    display: flex;
+    align-items: center;
+    /* --- MODIFIED: Use flex-start, auto-margin handles user profile position --- */
+    justify-content: flex-start; /* Align items to the start */
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    box-sizing: border-box;
+    height: 50px;
+}
+
+.sidebar-toggle {
+    background: none;
+    border: none;
+    color: rgb(2, 2, 2);
+    font-size: 40px;
+    cursor: pointer;
+    /* Position button fixed relative to viewport */
+    position: inherit;
+    left: 5px;
+    padding: 5px;
+    padding-bottom: 10px;
+    line-height: 1;
+    transition: opacity 0.3s ease; /* Transition only opacity for mobile hide */
+}
+
+.sidebar-toggle:hover {
+    color:#fdb90d;
+}
+/* --- MODIFIED: Remove the rule that changes toggle position when sidebar opens --- */
+/* .nativity-app-sidebar.open ~ .sidebar-toggle { left: 160px; } */
+/* The toggle's position is now fixed and independent */
+
+
+.app-title {
+    font-size: 25px;
+    font-weight: 300;
+    /* flex-grow: 1; /* Only needed if title should fill space */
+    /* --- MODIFIED: Margin to clear space for the fixed toggle button --- */
+    /* Adjust margin based on toggle's fixed position (10px left + 5px padding + ~30px width/padding = ~45px) */
+    margin-left: 45px; /* Space after the fixed toggle */
+    transition: margin-left 0.3s ease; /* Keep for consistency, though value might be fixed */
+}
+
+.user-profile {
+    position: relative;
+    margin-left: auto; /* Pushes user profile to the right */
+    padding-right: -5px;
+    padding-bottom: 2px;
+}
+
+.user-avatar {
+    background: none;
+    border: none;
+    color: rgb(255, 255, 255);
+    font-size: 40px;
+    cursor: pointer;
+    background-color: rgb(93, 127, 130);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+.user-avatar:hover {
+    background-color: rgb(163, 165, 166);
+    color: rgb(0, 0, 0);
+    border: 0.5px solid #9d9c9c;
+}
+
+.user-dropdown {
+    position: absolute;
+    top: calc(100% + 5px);
+    right: 0;
+    background-color: rgb(233, 233, 233);
+    color : #fff;
+    border: 1px solid #ddd;
+    list-style: none;
+    padding: 0px;
+    margin: 0;
+    min-width: 150px;
+    z-index: 101;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: none;
+    border-radius: 4px;
+}
+
+.user-dropdown.visible {
+    display: block;
+}
+
+.user-dropdown li a {
+    display: block;
+    padding: 8px 15px;
+    color: #333;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+.user-dropdown li a:hover {
+    background-color: #d1d1d1;
+}
+
+
+/* --- Sidebar --- */
+.nativity-app-sidebar {
+    /* --- MODIFIED: Transition width instead of transform --- */
+    width: 60px; /* Collapsed width - needs to be wide enough for centered icon */
+    /* transform: translateX(-140px); /* Removed */
+    left: 0; /* Fixed to the left edge of the viewport */
+    background-color: #28255c;
+    border-right: 1px solid #787e7c;
+    color: white;
+    position: fixed;
+    top: 30px; /* Position below header */
+    bottom: 0;
+    /* --- MODIFIED: Always reserve space for scrollbar --- */
+    overflow-y: none; /* Use 'scroll' instead of 'auto' */
+    padding-top: 21px;
+    transition: width 0.3s ease; /* Transition the width */
+    z-index: 99;
+    box-sizing: border-box;
+}
+
+.nativity-app-sidebar.open {
+    /* --- MODIFIED: Set full width when open --- */
+    width: 200px;
+    /* transform: translateX(0); /* Removed */
+}
+
+
+.nativity-sidebar-nav {
+    list-style: none;
+    padding: 0;
+}
+
+
+.nativity-sidebar-nav a {
+    display: flex; /* Still a flex container for text/arrow */
+    align-items: center;
+    /* --- MODIFIED: Set padding-left to make space for absolute icon --- */
+    /* icon (30px) + left margin (15px) + visual gap after icon (10px) = 55px */
+    padding: 12px 20px 12px 55px; /* top right bottom left */
+    position: relative; /* Needed for absolute icon positioning */
+    color: rgb(255, 255, 255);
+    text-decoration: none;
+    transition: background-color 0.4s ease, color 0.4s ease;
+    white-space: nowrap;
+    overflow: hidden; /* Hides text when collapsed by width */
+    /* Removed gap */
+}
+
+/* Ensure all sidebar links and submenu containers respect the sidebar width */
+.nativity-sidebar-nav a,
+.nativity-sidebar-nav li.has-submenu .submenu-toggle,
+.nativity-sidebar-nav li.has-submenu .submenu li a {
+    width: 100%;          /* take full sidebar width */
+    box-sizing: border-box;/* include padding in that width */
+}
+
+/* Keep the submenu UL itself from expanding past the sidebar */
+.nativity-sidebar-nav li.has-submenu .submenu {
+    width: 100%;
+}
+
+.nativity-sidebar-nav a:hover {
+    background-color:#e9e9e9;
+    color: black;
+    border-radius: 25px; 
+}
+
+/* Style for the icons (Positioned Absolutely) */
+.nativity-sidebar-nav a i {
+    /* --- MODIFIED: Position the icon absolutely --- */
+    position: absolute;
+    top: 50%; /* Center vertically */
+    left: 15px; /* Fixed horizontal position relative to link's left edge */
+    transform: translateY(-50%); /* Adjust vertical centering */
+
+    font-size: 20px;
+    width: 30px;        /* fixed icon width */
+    text-align: center;
+    flex-shrink: 0;     /* don’t let it shrink */
+    transition: none;   /* No transition on position or transform */
+    color: #ffffff; /* Ensure color is set explicitly if needed */
+}
+
+.nativity-sidebar-nav a:hover i {
+  color: #0d6efd !important; /* Bootstrap blue, change if you want a different blue */
+}
+
+/* Style for the text labels (remains flex item) */
+.nativity-sidebar-nav a span {
+    opacity: 0; /* Start hidden */
+    transition: opacity 0.4s ease; /* Opacity transition */
+    /* flex-grow: 1; /* Optional: Allow text to take available space */
+}
+
+.nativity-app-sidebar.open .nativity-sidebar-nav a span {
+    opacity: 1; /* Fade in when sidebar is open */
+}
+
+
+/* --- Submenu Styling --- */
+.nativity-sidebar-nav li.has-submenu .submenu-toggle  {
+    display: flex;
+    align-items: center;
+    width: 200px;
+    /* Same padding as main links for consistent text alignment */
+    padding: 12px 20px 12px 55px;
+    position: relative;
+    overflow: hidden;
+    /* Always keep text on the left and the chevron arrow on the far right */
+    justify-content: flex-start;   /* arrow is absolutely‑positioned now */
+
+}
+
+
+
+/* ---- Chevron arrow inside Financials row ---- */
+.nativity-sidebar-nav li.has-submenu .submenu-toggle .submenu-arrow {
+    position: absolute;      /* take it out of the flex flow */
+    top: 30%;                /* vertically centred */
+    right: 25px;             /* align with text gutter */
+    left: auto;              /* prevent any interfering left value */
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: #ffffff;
+    pointer-events: none;    /* arrow itself isn't clickable */
+}
+
+/* Adjust style for the dollar sign icon within the toggle (Positioned Absolutely) */
+.nativity-sidebar-nav li.has-submenu .submenu-toggle i.fa:not(.submenu-arrow) {
+    /* This targets the dollar sign icon specifically, excluding the arrow */
+     /* --- MODIFIED: Position the icon absolutely, same as other icons --- */
+     
+     top: 50%;
+     left: 0px;
+     transform: translateY(-50%);
+
+     font-size: 20px;
+     width: 30px;
+     text-align: center;
+     flex-shrink: 0; /* ensure it doesn't shrink */
+     color: #28255c; /* Ensure color */
+     /* Removed margin-right rule */
+     transition: none; /* No transition */
+}
+
+.nativity-sidebar-nav li.has-submenu .submenu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background-color: #28255c;
+    color: #28255c;
+    max-height: 0; /* Start collapsed */
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out; /* Vertical slide transition */
+    display: block; /* Setting display: none can break transitions */
+}
+
+/* This class will be added by JS to show the submenu container */
+.nativity-sidebar-nav li.has-submenu .submenu.visible {
+     max-height: 500px; /* Sufficiently large value to show all items */
+}
+
+/* Style for individual submenu items */
+.nativity-sidebar-nav li.has-submenu .submenu li {
+     padding: 0;
+     margin: 0;
+     opacity: 0; /* Hide initially */
+     transform: translateY(-10px); /* Start slightly above */
+     /* Keep individual item transition */
+     transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+
+/* Style for individual submenu items when shown by JS */
+.nativity-sidebar-nav li.has-submenu .submenu li.show {
+    opacity: 1; /* Fade in */
+    transform: translateY(0); /* Slide to final position */
+    /* Delay handled by JS setTimeout */
+}
+
+.submenu-toggle {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 12px 20px 12px 55px; /* Same as .nativity-sidebar-nav a */
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.menu-icon {
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  transform: translateY(-50%);
+  font-size: 20px;
+  width: 30px;
+  text-align: center;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.nativity-sidebar-nav li.has-submenu .submenu li a {
+    display: block; /* Make the whole li area clickable */
+    /* --- MODIFIED: Adjust left padding to align text with main menu text --- */
+    /* Text should align after the icon's space (55px) */
+    padding: 12px 20px 12px 55px; /* match 15‑px row height of main links */
+    color: #ffffff;
+    overflow: hidden;
+}
+
+/* Ensure submenu items have the same text color as main links */
+
+.nativity-sidebar-nav .has-submenu .submenu-toggle:hover {
+  color: #000 !important;
+}
+
+.nativity-sidebar-nav .has-submenu .submenu-toggle:hover span {
+  color: #000000 !important;
+}
+
+.nativity-sidebar-nav .has-submenu .submenu-toggle:hover i.menu-icon {
+  color: #0d6efd !important; /* blue icon */
+}
+
+/* Border */
+.nativity-sidebar-nav .has-submenu .submenu-toggle:hover {
+  background: #f4f4f4;
+  color: #000 !important;
+  border-right: 0.5px solid #787e7c; /* Match your sidebar border color/width */
+  /* Or use the same color as .nativity-sidebar-nav a:hover if different */
+  border-radius: 25px;
+}
+
+.nativity-sidebar-nav .has-submenu .submenu-toggle:hover .submenu-arrow {
+  color: #000 !important;
+}
+
+.nativity-sidebar-nav li.has-submenu .submenu li i {
+  color: #03a23d !important; /* Tailwind's green-400, adjust as needed */
+}
+
+.nativity-sidebar-nav li.has-submenu .submenu-toggle .submenu-arrow {
+  position: absolute;
+  top: 30%;
+  right: 25px;
+  left: auto;
+  transform: translateY(-50%) rotate(0deg);
+  transform-origin: 50% 50%;
+  font-size: 12px;
+  color: #ffffff;
+  pointer-events: none;
+  transition: transform 0.3s;
+}
+
+/* Rotate arrow icon when submenu is open */
+.nativity-sidebar-nav li.has-submenu.submenu-open .submenu-toggle .submenu-arrow {
+    transform: translateY(-50%) rotate(180deg); 
+}
+
+
+/* --- Main Content Area --- */
+.app-content {
+    margin-top: 50px; /* Below header */
+    /* --- MODIFIED: Margin matches collapsed sidebar width --- */
+    margin-left: 60px;
+    padding: 20px;
+    transition: margin-left 0.4s ease;
+}
+
+.nativity-app-sidebar.open + .app-content {
+    /* --- MODIFIED: Margin matches open sidebar width --- */
+    margin-left: 200px;
+}
+
+
+
+/* Always reserve space for the arrow icon */
+.nativity-sidebar-nav .submenu-arrow {
+    width: 14px;
+    text-align: center;
+    color: #bbb;
+    /* no margin-left; absolute positioning handles placement */
+}
+
+
+/* Hide chevron arrow entirely in collapsed (icon‑only) mode */
+
+
+
+/* -------------------------------------------------------------
+   Arrow visibility & placement
+   ------------------------------------------------------------- */
+/* Hide arrow by default (it will fade in once sidebar finishes opening) */
+.submenu-arrow {
+    opacity: 0;
+    margin-top: 10px;             /* nudge down a bit */
+    transition: opacity 0.2s ease;  /* basic fade */
+}
+
+/* Fade arrow in only after the width‑expansion animation (~0.4 s) */
+.nativity-app-sidebar.open .submenu-arrow {
+    opacity: 1;
+    transition: opacity 0.2s ease 0.4s; /* 0.4 s delay matches sidebar width transition */
+}
+
+
+.nativity-app-sidebar:not(.open) .nativity-sidebar-nav a,
+.nativity-app-sidebar:not(.open) .nativity-sidebar-nav li.has-submenu .submenu-toggle {
+    width: 100% !important;
+    padding: 12px 0 12px 55px;
+}
+
+.nativity-app-sidebar:not(.open) .nativity-sidebar-nav a i,
+.nativity-app-sidebar:not(.open) .nativity-sidebar-nav li.has-submenu .submenu-toggle i.fa:not(.submenu-arrow) {
+    left: 15px;                 /* fixed X-position */
+    transform: translateY(-50%);/* vertical centring */
+}
+
+/* Hide chevron when the sidebar is collapsed (icon‑only) */
+.nativity-app-sidebar:not(.open) .submenu-arrow {
+    display: none !important;   /* ensure it never shows */
+}
+
+/* =========================================================
+   Label opacity transition when sidebar opens / closes
+   ========================================================= */
+/* Shared transition for all link and submenu labels */
+.nativity-app-sidebar .nativity-sidebar-nav a span,
+.nativity-app-sidebar .submenu-toggle span {
+    transition: opacity 0.12s ease;
+}
+
+/* Visible when sidebar is open */
+.nativity-app-sidebar.open .nativity-sidebar-nav a span,
+.nativity-app-sidebar.open .submenu-toggle span {
+    opacity: 1;
+}
+
+/* Hidden (but not shifted) when sidebar is collapsed */
+.nativity-app-sidebar:not(.open) .nativity-sidebar-nav a span,
+.nativity-app-sidebar:not(.open) .submenu-toggle span {
+    opacity: 0;
+}
+
+  .progress-bar {
+    transition: width 0.6s ease;
+  }
+
+  .badge {
+    border-radius: 12px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .bg-secondary {
+    background-color: #d3d3d3 !important;
+    color: #333;
+  }
+
+  .bg-primary {
+    background-color: #0d6efd !important;
+  }
+
+  .nativity-sidebar-nav li.has-submenu .submenu li a:hover {
+    background-color: #c6ecfc; /* Light blue on hover */
+    color: #000;
+}
+
+/* --- Basic Responsiveness --- */
+@media (max-width: 768px) {
+    .app-title {
+    position: absolute;
+    margin-right: 150px;
+    margin-left: 0;
+    right: 440px;
+  }
+    /* Sidebar becomes a full-screen overlay */
+    .nativity-app-sidebar {
+        /* --- MODIFIED: Use width and left for mobile overlay --- */
+        width: 0; /* Starts collapsed off-screen */
+        left: -250px; /* Position fully off-screen initially */
+        /* Use both width and left for the transition */
+        transition: width 0.3s ease, left 0.3s ease;
+        padding-top: 60px; /* Account for potential taller mobile header */
+        /* --- MODIFIED: Always reserve space for scrollbar on mobile too --- */
+        overflow-y: none;
+    }
+    .nativity-app-sidebar.open {
+        /* --- MODIFIED: Set overlay width and position --- */
+        width: 200px; /* Open width */
+        left: 0; /* Position on-screen */
+    }
+
+    /* Ensure consistent padding and positioning for icons/text when sidebar is open on mobile */
+     .nativity-app-sidebar.open .nativity-sidebar-nav a,
+     .nativity-app-sidebar.open .nativity-sidebar-nav li.has-submenu .submenu-toggle {
+         /* Same padding as desktop open state (relative to link's left edge) */
+         padding: 10px 20px 10px 55px;
+     }
+
+     .nativity-app-sidebar.open .nativity-sidebar-nav a i,
+     .nativity-app-sidebar.open .nativity-sidebar-nav li.has-submenu .submenu-toggle i.fa:not(.submenu-arrow) {
+         /* Same absolute position as desktop open state (relative to link's left edge) */
+         left: 15px;
+     }
+
+     .nativity-app-sidebar.open .nativity-sidebar-nav li.has-submenu .submenu li a {
+         /* Same submenu item padding as desktop */
+         padding: 8px 20px 8px 55px;
+     }
+
+     .nativity-app-sidebar.open .nativity-sidebar-nav li.has-submenu .submenu-toggle {
+         /* Ensure space-between works for arrow when open on mobile */
+         justify-content: space-between;
+     }
+
+
+    /* Content doesn't shift on small screens */
+    .app-content {
+        margin-left: 0;
+        padding-top: 60px; /* Ensure content is below header */
+    }
+
+    /* Sidebar toggle position on mobile */
+    .sidebar-toggle {
+        /* --- MODIFIED: Position fixed relative to viewport --- */
+        position: fixed;
+        left: 10px; /* Align with header padding */
+        top: 0px; /* Align with header padding */
+        
+        transition: opacity 0.3s ease; /* Only transition opacity */
+        opacity: 1; /* Ensure visible initially */
+        pointer-events: auto;
+        z-index: 102;
+    }
+
+    /* Hide toggle when sidebar is open on mobile */
+     .nativity-app-sidebar.open ~ .sidebar-toggle {
+         opacity: 0;
+         pointer-events: none;
+     }
+
+     /* Header adjustments for small screens */
+     .app-header {
+         padding: 10px; /* Adjust padding */
+         padding-left: 10px; /* Add padding on mobile */
+         height: 60px; /* Adjust header height if needed */
+     }
+
+    /* On mobile remove title margin for toggle */
+    .app-title {
+        margin-left: 0;
+    }
+
+     /* Adjust sidebar padding-top if header height changes */
+     .nativity-app-sidebar.open {
+         padding-top: 60px; /* Matches potential new header height */
+     }
+     .user-dropdown {
+    position: absolute;
+    top: calc(100% + 15px);
+    right: 0;
+    background-color: rgb(233, 233, 233);
+    color : #fff;
+    border: 1px solid #ddd;
+    list-style: none;
+    padding: 0px;
+    margin: 0;
+    min-width: 150px;
+    z-index: 101;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: none;
+    border-radius: 4px;
+}
+
+}
