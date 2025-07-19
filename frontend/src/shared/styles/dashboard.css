@@ -171,6 +171,7 @@ body {
     white-space: nowrap;
     overflow: hidden; /* Hides text when collapsed by width */
     /* Removed gap */
+    border-radius: 25px; /* Always oval corners */
 }
 
 /* Ensure all sidebar links and submenu containers respect the sidebar width */
