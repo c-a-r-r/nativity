@@ -1,6 +1,6 @@
 <template>
 <hr class="mt-4">
-          <h4 class="mb-3">Price Information</h4>
+          <h3 class="mb-3">Price Information</h3>
         <div class="row g-3 mb-3">
         <div class="col-md-4">
               <label class="form-label">Price change</label>
@@ -176,3 +176,19 @@ const FormInput = {
     </div>`
 }
 </script>
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+* {
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Roboto', "Montserrat", sans-serif;
+}
+
+h3 {
+  font-size: 25px;
+  font-weight: 500;
+  font-family: 'Roboto', "Montserrat", sans-serif;
+}
+
+</style>

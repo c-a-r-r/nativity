@@ -352,40 +352,46 @@ const copyToClipboard = async (text) => {
 </template>
 
 <style scoped>
-.trip-creator {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 20px;
-  background-color: #f8f9fa;
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+:root{
+  --base-font-family:'Roboto','Montserrat',sans-serif;
+  --base-font-size:14px;
+  --base-font-weight:400;
 }
 
-.template-preview {
-  background-color: #fff;
-  border-color: #dee2e6;
+.typography-root{
+  font:var(--base-font-weight) var(--base-font-size)/1.5 var(--base-font-family);
 }
 
-.auto-populated-info {
-  border: 1px solid #d1ecf1;
+.fa,.fas,.far,.fal,.fad,.fab,[class^="fa-"],[class*=" fa-"]{
+  font-family:"Font Awesome 6 Free","Font Awesome 6 Pro","Font Awesome 6 Brands","Font Awesome 5 Free","Font Awesome 5 Pro","FontAwesome"!important;
+  font-weight:900;
 }
 
-.customization-section {
-  background-color: #fff;
-  padding: 15px;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
+button,input,textarea,select{
+  font:inherit;
 }
 
-.created-trip {
-  background-color: #f8fff8;
+h3,h5{
+  font-size:18px;
+  font-weight:500;
+  font-family:var(--base-font-family);
 }
 
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.trip-creator{
+  border:1px solid #e0e0e0;
+  border-radius:8px;
+  padding:20px;
+  background-color:#f8f9fa;
 }
 
-.spinner-border-sm {
-  width: 1rem;
-  height: 1rem;
-}
+.template-preview{background-color:#fff;border-color:#dee2e6;}
+.auto-populated-info{border:1px solid #d1ecf1;}
+.customization-section{background-color:#fff;padding:15px;border-radius:6px;border:1px solid #e9ecef;}
+.created-trip{background-color:#f8fff8;}
+
+.btn:disabled{opacity:.6;cursor:not-allowed;}
+
+.spinner-border-sm{width:1rem;height:1rem;}
 </style>

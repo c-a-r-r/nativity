@@ -8,6 +8,12 @@
       </router-link>
     </div>
 
+    <!-- Workflow Status Component -->
+    <QuoteWorkflowStatus 
+      v-if="!loading && form.workflow_status_rel"
+      :current-status="form.workflow_status_rel" 
+    />
+
     <!-- Loading state -->
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border" role="status">
@@ -111,15 +117,33 @@
         <div class="row g-3 mb-3">
           <div class="col-md-4">
             <label class="form-label">Status</label>
-            <input v-model="form.quote_status" class="form-control" />
+            <select v-model="form.quote_status" class="form-select">
+              <option value="">-- Select Status --</option>
+              <option value="1">Draft</option>
+              <option value="2">Sent to Contact</option>
+              <option value="4">Accepted</option>
+              <option value="5">Rejected</option>
+              <option value="6">Completed</option>
+            </select>
           </div>
           <div class="col-md-4">
             <label class="form-label">Workflow</label>
-            <input v-model="form.workflow_status_rel" class="form-control" />
+            <select v-model="form.workflow_status_rel" class="form-select">
+              <option value="">-- Select Workflow --</option>
+              <option value="10">Itinerary Created</option>
+              <option value="20">Send to Priest</option>
+              <option value="30">Sends interest back</option>
+              <option value="40">Send a quote w/ prices</option>
+              <option value="50">Priest approves & sends back</option>
+              <option value="60">Create marketing</option>
+              <option value="70">Upload marketing</option>
+              <option value="80">Send back to Priest via DocuSign</option>
+              <option value="90">Receive back approval</option>
+            </select>
           </div>
           <div class="col-md-4">
             <label class="form-label">Date Created</label>
-            <input v-model="form.date_created" class="form-control" />
+            <input :value="formatDate(form.date_created)" class="form-control" readonly />
           </div>
         </div>  
 
@@ -247,6 +271,7 @@ import MultiCityBlock from '../components/MultiCityBlock.vue'
 import ItineraryForm from '../components/ItineraryForm.vue'
 import PriceForm from '../components/PriceForm.vue'
 import MarketingBlock from '../components/MarketingBlock.vue'
+import QuoteWorkflowStatus from '../components/QuoteWorkflowStatus.vue'
 import FormFile from '@/modules/quotes/components/ui/FormFile.vue'
 import quoteApi from '../api/quotes.api'
 import useQuoteForm from '../composables/useQuoteForm'
@@ -268,6 +293,15 @@ const handleTripCreated = (tripData) => {
   console.log('Trip created successfully:', tripData)
   // Optionally reload the quote data to show the new trip
   loadQuote()
+}
+
+function formatDate(dateString) {
+  if (!dateString) return ''
+  try {
+    return new Date(dateString).toLocaleDateString()
+  } catch (error) {
+    return dateString
+  }
 }
 
 // File handling functions
@@ -418,6 +452,8 @@ async function save() {
         }
       } else if (k === 'multi_city') {
         data.multi_city = v ? '1' : '0'
+      } else if (k === 'workflow_status_rel' || k === 'quote_status') {
+        data[k] = Number(v)
       } else if (k === 'is_dmc') {
         data[k] = v ? 1 : 0
       } else if (k === 'mkt_shiped') {
@@ -441,3 +477,38 @@ async function save() {
   }
 }
 </script>
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+* {
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Roboto', "Montserrat", sans-serif;
+}
+
+/* Apply to all elements within this component */
+div, span, p, h1, h2, h3, h4, h5, h6, 
+a, li, td, th, label, button, input, 
+textarea, select, .form-control, .form-select, 
+.btn, .card, .alert {
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Roboto', "Montserrat", sans-serif;
+}
+
+/* Preserve FontAwesome icons */
+.fa, .fas, .far, .fal, .fad, .fab, [class*="fa-"], 
+i.fa, i.fas, i.far, i.fal, i.fad, i.fab, i[class*="fa-"] {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands", "Font Awesome 5 Free", "Font Awesome 5 Pro", "FontAwesome" !important;
+}
+
+/* Preserve upload button styling */
+button[onclick*="triggerFileInput"],
+button[onclick*="FileInput"],
+button[onclick*="file"],
+button[onclick*="upload"] {
+  font-size: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+}
+</style>

@@ -26,26 +26,24 @@ class QuoteViewSet(viewsets.ModelViewSet):
 
     STATUS_SLUG_TO_ID = {
         "draft":             1,
-        "sent":              2,
-        "approved":          4,
-        "archived":          5,
+        "sent-to-contact":   2,
+        "accepted":          4,
+        "rejected":          5,
+        "completed":         6,
         # Add more as needed
     }
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = super().get_queryset().order_by('-date_created')  # Default ordering: newest first
 
         # 1. Status filter
         slug = (self.request.GET.get("status") or "all").lower().strip()
-        slug = slug.replace("-", " ").replace("_", " ")
         if slug != "all":
             status_id = self.STATUS_SLUG_TO_ID.get(slug)
             if status_id is not None:
-                qs = qs.filter(quote_status_id=status_id).order_by("-date_created")
+                qs = qs.filter(quote_status_id=status_id)
             else:
                 return Quote.objects.none()
-        else:
-            qs = qs.order_by("id")
 
         # 2. Search filter
         term = (self.request.GET.get("q") or "").strip()

@@ -11,12 +11,12 @@
 
     <!-- status tabs -->
     <ul class="nav nav-tabs mt-2">
-      <li class="nav-item" v-for="label in statusLabels" :key="label">
+      <li class="nav-item" v-for="statusObj in statusLabels" :key="statusObj.id">
         <router-link
           class="nav-link"
-          :class="{ active: currentStatus === label.toLowerCase() }"
-          :to="makeQuery({ status: label.toLowerCase(), page: 1 })">
-          {{ label }}
+          :class="{ active: currentStatus === statusObj.id }"
+          :to="makeQuery({ status: statusObj.id, page: 1 })">
+          {{ statusObj.label }}
         </router-link>
       </li>
     </ul>
@@ -114,7 +114,14 @@ const route  = useRoute()
 const router = useRouter()
 
 // --------------- constants ---------------
-const statusLabels = ['All', 'Draft', 'Sent', 'Approved', 'Archived']
+const statusLabels = [
+  { id: 'draft', label: 'Draft' },
+  { id: 'sent-to-contact', label: 'Sent to Contact' },
+  { id: 'accepted', label: 'Accepted' },
+  { id: 'rejected', label: 'Rejected' },
+  { id: 'completed', label: 'Completed' },
+  { id: 'all', label: 'All' }
+]
 const perOptions   = [10, 25, 50, 100]
 
 // --------------- state ---------------
@@ -152,14 +159,18 @@ function makeQuery(extra = {}) {
 async function fetchQuotes() {
   loading.value = true
   try {
-    const res = await axios.get('/api/quotes/', {
-      params: {
-        status: currentStatus.value,
-        per:    per.value,
-        page:   pageInfo.page,
-        q:      search.value,
-      }
-    })
+    const params = {
+      per: per.value,
+      page: pageInfo.page,
+      q: search.value,
+    }
+    
+    // Add status filter - backend handles 'all' by default
+    if (currentStatus.value !== 'all') {
+      params.status = currentStatus.value
+    }
+    
+    const res = await axios.get('/api/quotes/', { params })
     quotes.value        = res.data.results || res.data || []
     pageInfo.totalPages = Math.ceil((res.data.count || quotes.value.length) / per.value)
   } catch (err) {

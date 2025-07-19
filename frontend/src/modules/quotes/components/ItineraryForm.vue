@@ -90,30 +90,70 @@ watch(() => form.value.destination_group, id => {
   if (g) form.value.trip_name = g.nombre
 })
 </script>
+<!-- MyComponent.vue (or .jsx/.svelte – anywhere that supports <style scoped>) -->
 <style scoped>
-/* Hide the default calendar icon */
-.custom-date-input::-webkit-calendar-picker-indicator {
-  opacity: 0;
-  position: absolute;
-  right: 0;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
+/* ---------------------------------------------------------------------------
+   1.  Load the font once
+--------------------------------------------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+/* ---------------------------------------------------------------------------
+   2.  Base-typography variables
+--------------------------------------------------------------------------- */
+:root {
+  --base-font-family: 'Roboto', 'Montserrat', sans-serif;
+  --base-font-size  : 14px;
+  --base-font-weight: 400;
 }
 
-/* Style for custom calendar icon */
-.custom-calendar-icon {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #42406f;
-  pointer-events: none;
-  font-size: 18px;
+/* Put this class on the outer-most element of the component
+   <div class="typography-root"> … </div>                                   */
+.typography-root {
+  font: var(--base-font-weight) var(--base-font-size)/1.5 var(--base-font-family);
 }
 
-/* Ensure the input container is positioned relative */
-.position-relative {
-  position: relative;
+/* Every child now *inherits* from .typography-root, so we don’t have to
+   use the heavy universal selector (*) any more.                           */
+
+/* ---------------------------------------------------------------------------
+   3.  Preserve Font Awesome icons
+--------------------------------------------------------------------------- */
+.fa, .fas, .far, .fal, .fad, .fab,
+[class^="fa-"], [class*=" fa-"] {
+  font-family:
+    "Font Awesome 6 Free",
+    "Font Awesome 6 Pro",
+    "Font Awesome 6 Brands",
+    "Font Awesome 5 Free",
+    "Font Awesome 5 Pro",
+    "FontAwesome" !important;
+  font-weight: 900;          /* solid style icons need this */
+}
+
+/* ---------------------------------------------------------------------------
+   4.  Make form controls & buttons inherit the typography
+--------------------------------------------------------------------------- */
+button, input, textarea, select {
+  font: inherit;
+}
+
+/* ---------------------------------------------------------------------------
+   5.  Component-specific helpers
+--------------------------------------------------------------------------- */
+.trip-card         { background-color: #f8f9fa; }
+
+.existing-trips {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1rem;
+  background-color: #fff;
+}
+
+.marketing-section {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.25rem;
+  background-color: #f8f9fa;
+  margin-bottom: 1.25rem;
 }
 </style>

@@ -28,3 +28,20 @@ const rows = reactive(
 
 watch(rows, () => { model.value = rows }, { deep:true })
 </script>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+* {
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Roboto', "Montserrat", sans-serif;
+}
+
+h3 {
+  font-size: 25px;
+  font-weight: 500;
+  font-family: 'Roboto', "Montserrat", sans-serif;
+}
+
+</style>

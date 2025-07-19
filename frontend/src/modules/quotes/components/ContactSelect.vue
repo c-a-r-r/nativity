@@ -125,12 +125,45 @@ function resetSearch() {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+* {
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Roboto', "Montserrat", sans-serif;
+}
+
+/* Apply to all elements within this component */
+div, span, p, h1, h2, h3, h4, h5, h6, 
+a, li, td, th, label, button, input, 
+textarea, select, .form-control, .form-select, 
+.btn, .card, .alert {
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Roboto', "Montserrat", sans-serif;
+}
+
+/* Preserve FontAwesome icons */
+.fa, .fas, .far, .fal, .fad, .fab, [class*="fa-"], 
+i.fa, i.fas, i.far, i.fal, i.fad, i.fab, i[class*="fa-"] {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands", "Font Awesome 5 Free", "Font Awesome 5 Pro", "FontAwesome" !important;
+}
+
+/* Preserve upload button styling */
+button[onclick*="triggerFileInput"],
+button[onclick*="FileInput"],
+button[onclick*="file"],
+button[onclick*="upload"] {
+  font-size: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+}
+
 /* Use :deep() to penetrate component boundaries */
 .contact-vselect :deep(.vs__dropdown-toggle) {
-  min-height: 38px; /* Reduced from 44px to match Bootstrap form-control */
-  padding: 6px 12px; /* Adjusted padding to match Bootstrap */
+  min-height: 30px; /* Reduced from 44px to match Bootstrap form-control */
   border-radius: 0.375rem; /* Match Bootstrap's border-radius */
-  font-size: 1rem !important;
+  font-size: 14px !important; /* Match our global font size */
   border: 1px solid #ced4da; /* Match Bootstrap border color */
 }
 
@@ -139,42 +172,44 @@ function resetSearch() {
   overflow: hidden; 
   text-overflow: ellipsis; 
   white-space: nowrap;
-  font-size: 1rem !important;
+  font-size: 14px !important; /* Match our global font size */
   line-height: 1.5 !important;
   margin: 0; /* Remove any default margin */
   padding: 0; /* Remove any default padding */
 }
 
 .contact-vselect :deep(.vs__search) {
-  font-size: 1rem !important;
+  font-size: 14px !important; /* Match our global font size */
   line-height: 1.5 !important;
   margin: 0;
   padding: 0;
 }
 
 .contact-vselect :deep(.vs__dropdown-option) {
-  font-size: 1rem !important;
+  font-size: 14px !important; /* Match our global font size */
   line-height: 1.5 !important;
 }
 
 /* Force the entire component font size */
 .contact-vselect {
-  font-size: 1rem !important;
+  font-size: 14px !important; /* Match our global font size */
 }
 
 .contact-vselect :deep(*) {
   font-size: inherit !important;
+  font-family: 'Roboto', "Montserrat", sans-serif !important;
 }
 
 .helper-line { 
   padding: 4px 8px; 
   color: #6c757d; 
-  font-size: .9rem; 
+  font-size: 14px; /* Match our global font size */
 }
 
 .contact-helper-text {
-  font-size: 0.875rem;
+  font-size: 14px; /* Match our global font size */
   color: #6c757d;
   margin-top: 0.25rem;
 }
 </style>
+

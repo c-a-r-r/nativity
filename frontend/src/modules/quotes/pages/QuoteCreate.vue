@@ -1,6 +1,12 @@
 <template>
   <h3 class="mb-3">CREATE A QUOTE</h3>
 
+  <!-- Workflow Status Component -->
+  <QuoteWorkflowStatus 
+    :current-status="form.workflow_status_rel || 10" 
+    size="small"
+  />
+
   <form @submit.prevent="save" class="p-4 rounded shadow-sm" style="background: #e2e9e8; color: black;">
 
     <!-- contact picker -->
@@ -178,6 +184,7 @@ import MultiCityBlock       from '../components/MultiCityBlock.vue'
 import ItineraryForm        from '../components/ItineraryForm.vue'
 import PriceForm            from '../components/PriceForm.vue'
 import MarketingBlock       from '../components/MarketingBlock.vue'
+import QuoteWorkflowStatus  from '../components/QuoteWorkflowStatus.vue'
 import quoteApi             from '../api/quotes.api'
 import useQuoteForm from '../composables/useQuoteForm'
 
