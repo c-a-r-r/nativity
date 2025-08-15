@@ -2,6 +2,7 @@
 *.log                # Log files
 media/               # User-uploaded media (if not storing in Git)
 staticfiles/         # Collected static files (e.g., via collectstatic)
+.env                 # Environment variables file
 .env.*               # Any named env files like .env.dev or .env.local
 coverage/            # Coverage reports (from pytest or coverage.py)
 .vscode/             # VSCode config files
