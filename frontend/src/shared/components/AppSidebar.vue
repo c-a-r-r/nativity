@@ -3,10 +3,10 @@
   <aside :class="['nativity-app-sidebar', { open: isOpen }]">
     <ul class="nativity-sidebar-nav">
       <li><router-link to="/"><i class="fa fa-home"></i> <span>Dashboard</span></router-link></li>
-      <li><router-link to="/trips"><i class="fa-solid fa-plane"></i> <span>Trips</span></router-link></li>
       <li><router-link to="/quotes"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Quotes</span></router-link></li>
-      <li><router-link to="/contacts"><i class="fas fa-users"></i> <span>Contacts</span></router-link></li>
       <li><router-link to="/marketing"><i class="fas fa-bullhorn"></i> <span>Marketing</span></router-link></li>
+      <li><router-link to="/trips"><i class="fa-solid fa-plane"></i> <span>Trips</span></router-link></li>
+      <li><router-link to="/contacts"><i class="fas fa-users"></i> <span>Contacts</span></router-link></li>
       <li><router-link to="/task"><i class="fas fa-tasks"></i> <span>Task</span></router-link></li>
       <li><router-link to="/Trackingsheet"><i class="fas fa-clipboard-list"></i> <span>Tracking Sheet</span></router-link></li>
       <li><router-link to="/email"><i class="fas fa-comment-dots"></i> <span>Email</span></router-link></li>

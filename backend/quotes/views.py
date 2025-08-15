@@ -19,6 +19,13 @@ class QuotePagination(PageNumberPagination):
     max_page_size = 100
 
 class QuoteViewSet(viewsets.ModelViewSet):
+    def update(self, request, *args, **kwargs):
+        print('DEBUG: Update request.data:', request.data)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        print('DEBUG: Partial update request.data:', request.data)
+        return super().partial_update(request, *args, **kwargs)
     queryset = Quote.objects.all().order_by('id')
     serializer_class = QuoteSerializer
     permission_classes = [IsAuthenticated]
@@ -45,7 +52,16 @@ class QuoteViewSet(viewsets.ModelViewSet):
             else:
                 return Quote.objects.none()
 
-        # 2. Search filter
+        # 2. Workflow status filter
+        workflow_status = self.request.GET.get("workflow_status")
+        if workflow_status:
+            try:
+                workflow_id = int(workflow_status)
+                qs = qs.filter(workflow_status_rel=workflow_id)
+            except ValueError:
+                pass
+
+        # 3. Search filter
         term = (self.request.GET.get("q") or "").strip()
         if term:
             filters = (

@@ -14,6 +14,7 @@ const vuetify = createVuetify({ components, directives })
 // --- Axios defaults (optional) ---
 import axios from 'axios'
 import './shared/styles/dashboard.css'
+import '@/shared/styles/trip-template.css'
 import '@fortawesome/fontawesome-free/css/all.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap'

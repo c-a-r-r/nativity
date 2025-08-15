@@ -20,7 +20,7 @@ export default [
     }
   },
   {
-    path: '/trips/private/:token',
+    path: '/trips/private/:slug',
     name: 'TripPrivate', 
     component: TripPrivate,
     meta: {

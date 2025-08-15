@@ -125,6 +125,7 @@ function resetSearch() {
 </script>
 
 <style scoped>
+
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
 * {
@@ -158,12 +159,12 @@ button[onclick*="upload"] {
   font-weight: inherit;
   font-family: inherit;
 }
-
 /* Use :deep() to penetrate component boundaries */
 .contact-vselect :deep(.vs__dropdown-toggle) {
   min-height: 30px; /* Reduced from 44px to match Bootstrap form-control */
+  
   border-radius: 0.375rem; /* Match Bootstrap's border-radius */
-  font-size: 14px !important; /* Match our global font size */
+  /*  font-size: 1rem !important;
   border: 1px solid #ced4da; /* Match Bootstrap border color */
 }
 
@@ -172,44 +173,42 @@ button[onclick*="upload"] {
   overflow: hidden; 
   text-overflow: ellipsis; 
   white-space: nowrap;
-  font-size: 14px !important; /* Match our global font size */
+  /* font-size: 1rem !important; */
   line-height: 1.5 !important;
   margin: 0; /* Remove any default margin */
   padding: 0; /* Remove any default padding */
 }
 
 .contact-vselect :deep(.vs__search) {
-  font-size: 14px !important; /* Match our global font size */
+  /* font-size: 1rem !important; */
   line-height: 1.5 !important;
   margin: 0;
   padding: 0;
 }
 
 .contact-vselect :deep(.vs__dropdown-option) {
-  font-size: 14px !important; /* Match our global font size */
+  /* font-size: 1rem !important; */
   line-height: 1.5 !important;
 }
 
 /* Force the entire component font size */
 .contact-vselect {
-  font-size: 14px !important; /* Match our global font size */
+  font-size: 1rem !important;
 }
 
 .contact-vselect :deep(*) {
   font-size: inherit !important;
-  font-family: 'Roboto', "Montserrat", sans-serif !important;
 }
 
 .helper-line { 
   padding: 4px 8px; 
   color: #6c757d; 
-  font-size: 14px; /* Match our global font size */
+  font-size: .9rem; 
 }
 
 .contact-helper-text {
-  font-size: 14px; /* Match our global font size */
+  font-size: 0.875rem;
   color: #6c757d;
   margin-top: 0.25rem;
 }
 </style>
-

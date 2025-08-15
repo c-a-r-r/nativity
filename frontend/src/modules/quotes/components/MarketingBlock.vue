@@ -277,7 +277,7 @@
         <textarea 
           v-model="form.trip_includes" 
           class="form-control" 
-          rows="6"
+          rows="8"
           placeholder="Round-Trip Airfare&#10;Airport taxes & fuel surcharges&#10;First-Class Hotels&#10;Land Transportation"
         ></textarea>
       </div>
@@ -286,7 +286,7 @@
         <textarea 
           v-model="form.trip_not_includes" 
           class="form-control" 
-          rows="6"
+          rows="8"
           placeholder="Trip Cancellation Insurance&#10;Lunch&#10;Personal Items"
         ></textarea>
       </div>
@@ -295,7 +295,37 @@
     <!-- Marketing Template Section -->
     <div class="marketing-section mb-4" v-if="quote">
       <h5>Marketing Trip</h5>
-      
+
+      <!-- Template selection and trip creation -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Marketing Trip Template</label>
+          <select v-model="selectedTemplate" class="form-select">
+            <option value="">-- Select Template --</option>
+            <option v-for="tpl in templates" :key="tpl.id" :value="tpl.id">
+              {{ tpl.name }}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+          <button class="btn btn-success" :disabled="!selectedTemplate || creatingTrip" @click="createMarketingTrip">
+            {{ creatingTrip ? 'Creating…' : 'Create Marketing Trip' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Show trip links if created -->
+      <div v-if="tripLinks.public || tripLinks.private" class="alert alert-info mb-3">
+        <div v-if="tripLinks.public">
+          <strong>Public Link:</strong>
+          <a :href="tripLinks.public" target="_blank">{{ tripLinks.public }}</a>
+        </div>
+        <div v-if="tripLinks.private">
+          <strong>Private Link:</strong>
+          <a :href="tripLinks.private" target="_blank">{{ tripLinks.private }}</a>
+        </div>
+      </div>
+
       <!-- Show existing trips -->
       <div v-if="quote.trips?.length" class="existing-trips mb-3">
         <h6>Existing Marketing Trips:</h6>
@@ -331,12 +361,6 @@
           </div>
         </div>
       </div>
-      
-      <!-- Create new trip -->
-      <TripCreator 
-        :quote="quote" 
-        @trip-created="handleTripCreated"
-      />
     </div>
 
     <!-- Marketing Kit Progress and Status -->
@@ -390,10 +414,10 @@
       <div class="col-md-12">
         <label class="form-label">Private Link</label>
         <input 
-          v-model="form.private_link" 
+          v-model="form.private_link"
           type="text" 
           class="form-control" 
-          placeholder="Private link will be generated after creating a trip"
+          :placeholder="form.private_link ? form.private_link : 'Private link will be generated after creating a trip'"
           readonly
         />
         <small class="form-text text-muted">
@@ -406,10 +430,10 @@
       <div class="col-md-12">
         <label class="form-label">Public Link</label>
         <input 
-          v-model="form.public_link" 
+          v-model="form.public_link"
           type="text" 
           class="form-control" 
-          placeholder="Public link will be generated after creating a trip"
+          :placeholder="form.public_link ? form.public_link : 'Public link will be generated after creating a trip'"
           readonly
         />
         <small class="form-text text-muted">
@@ -421,57 +445,78 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import TripCreator from './TripCreator.vue'
-
-// Define props - THIS WAS MISSING
+import { ref, computed, onMounted } from 'vue'
+import http from '@/shared/services/http'
+const form = defineModel()
 const props = defineProps({
   quote: {
     type: Object,
     default: null
   }
 })
-
-// Define emits
 const emit = defineEmits(['trip-created'])
-
-const form = defineModel()
 const fileInputs = ref({})
 
-const handleTripCreated = (tripData) => {
-  console.log('New trip created in MarketingBlock:', tripData)
-  
-  // Update the form with correct URLs
-  if (tripData.slug || tripData.trip_slug) {
-    const slug = tripData.trip_slug || tripData.slug
-    form.value.public_link = `/trips/${slug}`
-  }
-  
-  if (tripData.private_token) {
-    form.value.private_link = `/trips/private/${tripData.private_token}`
-  }
-  
-  // Emit event to parent
-  emit('trip-created', tripData)
-}
+const templates = ref([])
+const selectedTemplate = ref('')
+const tripLinks = ref({ public: '', private: '' })
+const creatingTrip = ref(false)
 
-// Show marketing block only for specific workflow statuses
 const shouldShowMarketing = computed(() => {
   const marketingStatuses = [60, 70, 80, 90]
   return marketingStatuses.includes(form.value?.workflow_status_rel)
 })
 
-// File handling functions
+async function loadTemplates() {
+  try {
+    const response = await http.get('/api/marketing/templates/')
+    templates.value = response.data.results || response.data
+  } catch (error) {
+    console.error('Failed to load templates:', error)
+  }
+}
+
+
+async function createMarketingTrip() {
+  if (!selectedTemplate.value || !props.quote?.id) return
+  creatingTrip.value = true
+  try {
+    const response = await http.post('/api/marketing/create-trip/', {
+      quote_id: props.quote.id,
+      template_id: selectedTemplate.value
+    })
+    // Show links in alert
+    tripLinks.value.public = response.data.public_link
+    tripLinks.value.private = response.data.private_link
+    // Persist links to backend quote record
+    await http.patch(`/api/quotes/${props.quote.id}/`, {
+      marketing_public_link: response.data.public_link,
+      marketing_private_link: response.data.private_link
+    })
+    emit('trip-created', response.data)
+  } catch (error) {
+    console.error('Failed to create marketing trip:', error)
+    alert('Failed to create marketing trip.')
+  } finally {
+    creatingTrip.value = false
+  }
+}
+
+onMounted(() => {
+  loadTemplates()
+})
+
+
+// Removed handleTripCreated: parent should reload quote and update form fields after trip creation
+
 function getFileName(fieldName) {
   const file = form.value?.[fieldName]
   if (!file) return ''
-  
   if (file instanceof File) {
     return file.name
   } else if (typeof file === 'string') {
     return file.split('/').pop() || file
   }
-  
   return ''
 }
 

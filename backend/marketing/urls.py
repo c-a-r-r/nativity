@@ -1,16 +1,18 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+
 from . import views
+from .views_upload import ImageUploadView
+
 
 router = DefaultRouter()
-router.register(r'templates', views.WebsiteTemplateViewSet)
-router.register(r'trips', views.TripInstanceViewSet)
+router.register(r'templates', views.MarketingTripTemplateViewSet)
+router.register(r'template-destinations', views.TemplateDestinationViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('trips/public/<slug:slug>/', views.TripPublicView.as_view(), name='trip-public'),
-    path('trips/private/<uuid:token>/', views.TripPrivateView.as_view(), name='trip-private'),
-    path('trips/<slug:slug>/register/', views.TripRegistrationView.as_view(), name='trip-register'),
-
-    path('quotes/<int:quote_id>/create-trip/', views.QuoteTripCreateView.as_view(), name='quote-create-trip'),
+    path('upload-image/', ImageUploadView.as_view(), name='marketing-upload-image'),
+    path('create-trip/', views.CreateMarketingTripView.as_view(), name='marketing-create-trip'),
+    path('trips/<slug:slug>/', views.PublicTripView.as_view(), name='marketing-public-trip'),
+path('trips/private/<slug:slug>/', views.PrivateTripView.as_view(), name='marketing-private-trip'),
 ]

@@ -21,20 +21,28 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: '',          name: 'Dashboard',  component: () => import('@/modules/dashboard/pages/Dashboard.vue') },
+      { path: 'marketing', name: 'MarketingViews', component: () => import('@/modules/marketing/pages/MarketingViews.vue') },
       ...quoteRoutes,
       ...contactRoutes,
       ...financialRoutes,
-      ...marketingRoutes,
       ...settingsRoutes
+      // Do NOT include ...marketingRoutes here for public pages
     ],
   },
+  // Public trip routes (no auth required)
+  {
+    path: '/marketing/trips/:slug',
+    name: 'TripPublic',
+    component: () => import('@/modules/marketing/pages/TripPublic.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/marketing/trips/private/:slug',
+    name: 'TripPrivate',
+    component: () => import('@/modules/marketing/pages/TripPrivate.vue'),
+    meta: { requiresAuth: false }
+  },
   { path: '/login', name: 'Login', component: Login },
-  
-  /* Public trip routes (outside authentication) - comment out until components exist */
-  // { path: '/trip/:id',       name: 'public',  component: () => import('@/modules/marketing/pages/TripPage.vue') },
-  // { path: '/p/:token',       name: 'private', component: () => import('@/modules/marketing/components/TripPrivate.vue') },
-  // { path: '/register/:id',   name: 'register', component: () => import('@/modules/marketing/components/RegisterForm.vue') },
-  
   { path: '/:pathMatch(.*)*', redirect: '/login' },
 ]
 

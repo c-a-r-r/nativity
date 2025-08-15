@@ -3,10 +3,14 @@
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mt-1">
       <h3 class="mb-0">EDIT QUOTE</h3>
-      <router-link :to="{ name: 'QuoteList' }" class="btn btn-primary">
-        Back to Quotes
+      <router-link 
+        :to="route.query.returnTo === 'marketing' ? { name: 'MarketingViews' } : { name: 'QuoteList' }" 
+        class="btn btn-primary">
+        {{ route.query.returnTo === 'marketing' ? 'Back to Marketing' : 'Back to Quotes' }}
       </router-link>
     </div>
+
+    <!-- ...existing code... -->
 
     <!-- Workflow Status Component -->
     <QuoteWorkflowStatus 
@@ -48,48 +52,48 @@
       <ItineraryForm v-model="form" />
       
     <div class="row g-3 mb-3">
-    <div class="col-md-4">
+      <div class="col-md-4">
         <label class="form-label">Departure City</label>
         <DepartureCitySelect
-        v-model="form.departure_city_id"
-        @update:cost="form.departure_city_cost=$event" />
-        
+          v-model="form.departure_city_id"
+          @update:cost="form.departure_city_cost=$event" />
         <div class="mt-3">
-        <div class="form-check">
-            <input 
-            class="form-check-input" 
-            type="checkbox" 
-            v-model="form.charge_city_fee" 
-            id="chargeCityFee" 
-            true-value="YES" 
-            false-value="NO"
-            >
-            <label class="form-check-label" for="chargeCityFee">
-            Add city cost to total price
-            </label>
+          <!-- ...existing code for checkboxes... -->
         </div>
-        <div class="form-check">
-            <input 
-            class="form-check-input" 
-            type="checkbox" 
-            v-model="form.multi_city" 
-            id="multiCity"
-            @change="onMultiCityChange"
-            >
-            <label class="form-check-label" for="multiCity">
-            Allow departure from multiple cities
-            </label>
-        </div>
-        </div>
-    </div>
+      </div>
     </div>
 
-      <!-- Add debug info temporarily
-    <div class="alert alert-info" v-if="true">
-        DEBUG: multi_city = {{ form.multi_city }} (type: {{ typeof form.multi_city }})
-        <br>
-        MultiCityBlock should show: {{ !!form.multi_city }}
-    </div> -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-12">
+        <label class="form-label">Private Link</label>
+        <input 
+          v-model="form.private_link" 
+          type="text" 
+          class="form-control" 
+          :placeholder="form.private_link ? form.private_link : 'Private link will be generated after creating a trip'"
+          readonly
+        />
+        <small class="form-text text-muted">
+          This private link allows internal access to view and manage the trip.
+        </small>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-12">
+        <label class="form-label">Public Link</label>
+        <input 
+          v-model="form.public_link" 
+          type="text" 
+          class="form-control" 
+          :placeholder="form.public_link ? form.public_link : 'Public link will be generated after creating a trip'"
+          readonly
+        />
+        <small class="form-text text-muted">
+          This public link is what you share with potential travelers.
+        </small>
+      </div>
+    </div>
 
     <!-- This should be hidden when form.multi_city is false -->
     <MultiCityBlock v-if="form.multi_city" v-model="form.multiCities" />
@@ -289,10 +293,15 @@ const fileInputs = ref({})
 
 const { form, currentUser, loadCurrentUser } = useQuoteForm()
 
-const handleTripCreated = (tripData) => {
+const templates = ref([])
+const selectedTemplate = ref('')
+const tripLinks = ref({ public: '', private: '' })
+const creatingTrip = ref(false)
+
+const handleTripCreated = async (tripData) => {
   console.log('Trip created successfully:', tripData)
-  // Optionally reload the quote data to show the new trip
-  loadQuote()
+  // Only reload quote from backend to update form fields with permanent links
+  await loadQuote()
 }
 
 function formatDate(dateString) {
@@ -362,12 +371,49 @@ function onMultiCityChange() {
   }
 }
 
+async function loadTemplates() {
+  try {
+    const response = await http.get('/api/marketing/templates/')
+    templates.value = response.data.results || response.data
+  } catch (error) {
+    console.error('Failed to load templates:', error)
+  }
+}
+
+async function createMarketingTrip() {
+  if (!selectedTemplate.value || !quoteId) return
+  creatingTrip.value = true
+  try {
+    // Call backend to create trip, pass quoteId and selectedTemplate
+    const response = await http.post('/api/marketing/create-trip/', {
+      quote_id: quoteId,
+      template_id: selectedTemplate.value
+    })
+    // Assume response contains public_link and private_link
+    tripLinks.value.public = response.data.public_link
+    tripLinks.value.private = response.data.private_link
+    // Save links to backend
+    await quoteApi.update(quoteId, {
+      marketing_public_link: response.data.public_link,
+      marketing_private_link: response.data.private_link
+    })
+    // Reload quote to update form fields with saved links
+    await loadQuote()
+  } catch (error) {
+    console.error('Failed to create marketing trip:', error)
+    alert('Failed to create marketing trip.')
+  } finally {
+    creatingTrip.value = false
+  }
+}
+
 onMounted(async () => {
   loading.value = true
   error.value = ''
   try {
     await loadCurrentUser()
     await loadQuote()
+    await loadTemplates()
   } catch (err) {
     error.value = err.message || 'Failed to load quote data.'
     console.error('Load error:', err)
@@ -387,11 +433,20 @@ async function loadQuote() {
     // Populate form with quote data
     Object.assign(form, quoteData)
     
+    // Map backend field names to frontend field names
+    if (quoteData.trip_not_include) {
+      form.trip_not_includes = quoteData.trip_not_include
+    }
+    
+    // Ensure marketing links are loaded into form (always overwrite)
+    form.public_link = quoteData.marketing_public_link || ''
+    form.private_link = quoteData.marketing_private_link || ''
+
     // CONVERT SERVER VALUES TO PROPER BOOLEANS
     form.multi_city = quoteData.multi_city === '1' || quoteData.multi_city === 1 || quoteData.multi_city === true
-    
+
     console.log('Converted multi_city from:', quoteData.multi_city, 'to:', form.multi_city)
-    
+
     // If client is just an ID, fetch the full client data
     if (quoteData.client && typeof quoteData.client === 'number') {
       try {
@@ -411,14 +466,14 @@ async function loadQuote() {
         display: `${quoteData.client.first_name || ''} ${quoteData.client.last_name || ''}`.trim()
       }
     }
-    
+
     // Convert multi-city data if it exists
     if (quoteData.multiCities && Array.isArray(quoteData.multiCities)) {
       form.multiCities = quoteData.multiCities
     } else {
       form.multiCities = []
     }
-    
+
     console.log('Final form.client:', form.client)
     console.log('Final multi_city value:', form.multi_city, typeof form.multi_city)
   } catch (err) {
@@ -440,9 +495,8 @@ async function save() {
     
     const data = {}
     
+
     Object.entries(form).forEach(([k, v]) => {
-      if (v == null || v === '') return
-      
       if (k === 'client' && typeof v === 'object') {
         data.client = v.id
       } else if (k === 'multiCities' && Array.isArray(v)) {
@@ -458,17 +512,35 @@ async function save() {
         data[k] = v ? 1 : 0
       } else if (k === 'mkt_shiped') {
         data[k] = v ? 'YES' : 'NO'
+      } else if (k === 'public_link' || k === 'private_link') {
+        // handled below
       } else if (typeof v === 'boolean') {
         data[k] = v ? 'true' : 'false'
-      } else if (typeof v !== 'object' && typeof v !== 'function') {
+      } else if (typeof v !== 'object' && typeof v !== 'function' && v != null && v !== '') {
         data[k] = v
       }
     })
 
+    // Map frontend field names to backend field names
+    if (form.trip_not_includes) {
+      data.trip_not_include = form.trip_not_includes
+    }
+
+    // Always send marketing_public_link and marketing_private_link, even if empty
+    data.marketing_public_link = form.public_link || ''
+    data.marketing_private_link = form.private_link || ''
+
     console.log('Updating quote with data:', data)
 
     await quoteApi.update(quoteId, data)
-    router.push({ name: 'QuoteList' })
+    
+    // Check if we should return to marketing views
+    const returnTo = route.query.returnTo
+    if (returnTo === 'marketing') {
+      router.push({ name: 'MarketingViews' })
+    } else {
+      router.push({ name: 'QuoteList' })
+    }
   } catch (e) {
     error.value = e.response?.data?.detail || e.message || 'An error occurred'
     console.error('Update error:', e)

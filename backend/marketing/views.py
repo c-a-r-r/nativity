@@ -1,3 +1,40 @@
+# --- Public Trip View ---
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .models import MarketingTripTemplate
+
+
+from .models import MarketingTrip
+from .serializers import MarketingTripSerializer
+
+class PublicTripView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request, slug):
+        trip = MarketingTrip.objects.filter(slug=slug).first()
+        if not trip:
+            return Response({'error': 'Trip not found'}, status=404)
+        serializer = MarketingTripSerializer(trip)
+        return Response({
+            'slug': slug,
+            'trip': serializer.data,
+        })
+
+# --- Private Trip View ---
+class PrivateTripView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request, slug):
+        trip = MarketingTrip.objects.filter(slug=slug).first()
+        if not trip:
+            return Response({'error': 'Trip not found'}, status=404)
+        serializer = MarketingTripSerializer(trip)
+        return Response({
+            'slug': slug,
+            'trip': serializer.data,
+        })
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.decorators import action
@@ -6,111 +43,77 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 
-from .models import TripTemplate, Trip, PrivateAccessToken, TripRegistration
-from .serializers import (
-    TripTemplateSerializer, 
-    TripSerializer, 
-    TripDetailSerializer, 
-    TripPrivateSerializer,
-    TripRegistrationSerializer
-)
 
-# Create aliases for backward compatibility
-WebsiteTemplate = TripTemplate
-TripInstance = Trip
-WebsiteTemplateSerializer = TripTemplateSerializer
-TripInstanceSerializer = TripSerializer
+from .models import MarketingTripTemplate, TemplateDestination
+from .serializers import MarketingTripTemplateSerializer, TemplateDestinationSerializer
 
-class WebsiteTemplateViewSet(viewsets.ModelViewSet):
-    queryset = TripTemplate.objects.filter(is_active=True)
-    serializer_class = TripTemplateSerializer
-    permission_classes = [IsAuthenticated]  # ADD THIS LINE - it was missing!
-    
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        destination = self.request.query_params.get('destination')
-        duration = self.request.query_params.get('duration')
-        
-        if destination:
-            queryset = queryset.filter(destination__icontains=destination)
-        if duration:
-            queryset = queryset.filter(duration_days=duration)
-            
-        return queryset.order_by('destination', 'duration_days')
+# --- CRUD ViewSet for MarketingTripTemplate ---
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
-class TripInstanceViewSet(viewsets.ModelViewSet):
-    queryset = Trip.objects.all()
-    serializer_class = TripSerializer
+class MarketingTripTemplateViewSet(viewsets.ModelViewSet):
+    queryset = MarketingTripTemplate.objects.all()
+    serializer_class = MarketingTripTemplateSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    # ...existing code...
+
+class TemplateDestinationViewSet(viewsets.ModelViewSet):
+    queryset = TemplateDestination.objects.all()
+    serializer_class = TemplateDestinationSerializer
+
+
+# --- Create Marketing Trip API ---
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from .models import MarketingTripTemplate
+from .serializers import MarketingTripTemplateSerializer
+
+class CreateMarketingTripView(APIView):
     permission_classes = [IsAuthenticated]
 
-class QuoteTripCreateView(APIView):
-    """Create a trip from a quote using a template"""
-    permission_classes = [IsAuthenticated]
-    
-    def post(self, request, quote_id):
-        from quotes.models import Quote
-        
-        quote = get_object_or_404(Quote, id=quote_id)
+    def post(self, request, *args, **kwargs):
+        # Expecting template_id and quote_id in request.data
         template_id = request.data.get('template_id')
-        
-        if not template_id:
-            return Response({'error': 'Template ID required'}, status=400)
-        
-        try:
-            trip = quote.create_trip_from_template(template_id)
-            
-            # Get the private token
-            private_token = trip.private_tokens.first()
-            
-            # Generate complete URLs
-            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
-            public_url = f"{frontend_url}/trips/{trip.slug}"
-            private_url = f"{frontend_url}/trips/private/{private_token.token}" if private_token else None
-            
-            return Response({
-                'message': 'Trip created successfully',
-                'trip_id': trip.id,
-                'trip_slug': trip.slug,
-                'trip_name': trip.trip_name,
-                'slug': trip.slug,
-                'private_token': private_token.token if private_token else None,
-                'is_published': trip.is_published,
-                'public_url': public_url,
-                'private_url': private_url,
-            }, status=201)
-        except Exception as e:
-            return Response({'error': str(e)}, status=400)
-
-class TripPublicView(APIView):
-    def get(self, request, slug):
-        trip = get_object_or_404(Trip, slug=slug, is_published=True)
-        serializer = TripDetailSerializer(trip)
-        return Response(serializer.data)
-
-class TripPrivateView(APIView):
-    def get(self, request, token):
-        private_access = get_object_or_404(PrivateAccessToken, token=token)
-        trip = private_access.trip
-        serializer = TripPrivateSerializer(trip, context={'token': token})
-        return Response(serializer.data)
-
-class TripRegistrationView(APIView):
-    def post(self, request, slug):
-        trip = get_object_or_404(Trip, slug=slug, is_published=True)
-        
-        data = request.data.copy()
-        data['trip'] = trip.id
-        
-        serializer = TripRegistrationSerializer(data=data)
-        if serializer.is_valid():
-            registration = serializer.save()
-            return Response({
-                'message': 'Registration successful',
-                'registration_id': registration.id
-            }, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# Legacy view names for compatibility
-TripInstanceView = TripPublicView
-TemplateList = WebsiteTemplateViewSet
+        quote_id = request.data.get('quote_id')
+        if not template_id or not quote_id:
+            return Response({'error': 'template_id and quote_id are required'}, status=status.HTTP_400_BAD_REQUEST)
+        template = MarketingTripTemplate.objects.filter(id=template_id).first()
+        if not template:
+            return Response({'error': 'Template not found'}, status=status.HTTP_404_NOT_FOUND)
+        from quotes.models import Quote
+        quote = Quote.objects.filter(id=quote_id).first()
+        if not quote:
+            return Response({'error': 'Quote not found'}, status=status.HTTP_404_NOT_FOUND)
+        import uuid
+        slug = f"trip-{template_id}-{uuid.uuid4().hex[:8]}"
+        # Create the MarketingTrip record
+        trip = MarketingTrip.objects.create(
+            quote=quote,
+            template=template,
+            trip_title=template.trip_title,
+            promo_text=getattr(template, 'promo_text', ''),
+            hero_image=template.hero_image,
+            itinerary=template.itinerary,
+            departure_date=getattr(quote, 'departure_date', None),
+            arrival_date=getattr(quote, 'arrival_date', None),
+            total_cost=getattr(quote, 'total_cost', None),
+            departure_city=getattr(quote, 'departure_city', ''),
+            trip_includes=getattr(quote, 'trip_includes', ''),
+            trip_not_includes=getattr(quote, 'trip_not_includes', ''),
+            spiritual_director=getattr(quote, 'spiritual_director', ''),
+            brochure=getattr(quote, 'brochure', ''),
+            video_link=getattr(quote, 'video_link', ''),
+            contact_info=getattr(quote, 'contact_info', ''),
+            slug=slug,
+            is_published=True
+        )
+        from .serializers import MarketingTripSerializer
+        serializer = MarketingTripSerializer(trip)
+        public_link = f"/marketing/trips/{slug}"
+        private_link = f"/marketing/trips/private/{slug}"
+        return Response({
+            'trip': serializer.data,
+            'public_link': public_link,
+            'private_link': private_link,
+            'slug': slug,
+        }, status=status.HTTP_201_CREATED)

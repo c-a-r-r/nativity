@@ -12,7 +12,12 @@ class QuoteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Quote
-        fields = '__all__'  # or list all fields explicitly, plus the above
+        fields = '__all__'
+        # Ensure these fields are writable
+        extra_kwargs = {
+            'marketing_public_link': {'required': False, 'read_only': False},
+            'marketing_private_link': {'required': False, 'read_only': False},
+        }
 
     def get_departure_city_display(self, obj):
         city = getattr(obj, 'departure_city_id', None)

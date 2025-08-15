@@ -133,7 +133,7 @@ class Quote(models.Model):
     display_commission_fundraiser = models.CharField(max_length=3)
     departure_date = models.DateField(blank=True, null=True)
     arrival_date = models.DateField(blank=True, null=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, default=1)
     quote_status = models.ForeignKey(
         QuoteStatus,
         on_delete=models.SET_NULL,
@@ -246,10 +246,14 @@ class Quote(models.Model):
     dep_city_cost9 = models.DecimalField(max_digits=19, decimal_places=2, blank=True, null=True)
     terms_template_id = models.IntegerField(blank=True, null=True)
     final_itenirary = models.TextField(blank=True, null=True)
+
+    # --- Marketing Trip Links ---
+    marketing_public_link = models.CharField(max_length=512, blank=True, null=True)
+    marketing_private_link = models.CharField(max_length=512, blank=True, null=True)
     max_pax = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'quote'
 
     def __str__(self):

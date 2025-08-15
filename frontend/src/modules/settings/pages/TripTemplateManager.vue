@@ -6,9 +6,14 @@
         <h4>Trip Templates</h4>
         <p class="text-muted">Manage templates for creating marketing trips from quotes</p>
       </div>
-      <button class="btn btn-primary" @click="openCreateForm">
-        <i class="fas fa-plus me-2"></i>Create New Template
-      </button>
+      <div class="d-flex">
+        <button class="btn btn-primary me-2" @click="openCreateForm">
+          <i class="fas fa-plus me-2"></i>Create New Template
+        </button>
+        <button class="btn btn-secondary" @click="openManageDestinationsModal">
+          <i class="fas fa-map-marker-alt me-2"></i>Manage Destinations
+        </button>
+      </div>
     </div>
 
     <!-- Statistics Cards -->
@@ -40,7 +45,7 @@
       <div class="col-md-3">
         <div class="card bg-info text-white">
           <div class="card-body">
-            <h5>{{ uniqueDestinations }}</h5>
+            <h5>{{ destinations.length }}</h5>
             <small>Destinations</small>
           </div>
         </div>
@@ -61,8 +66,8 @@
         <div class="col-md-3">
           <select v-model="filterDestination" class="form-select">
             <option value="">All Destinations</option>
-            <option v-for="dest in destinations" :key="dest" :value="dest">
-              {{ dest }}
+            <option v-for="dest in destinations" :key="dest.id" :value="dest.id">
+              {{ dest.name }}
             </option>
           </select>
         </div>
@@ -81,154 +86,80 @@
       </div>
     </div>
 
-    <!-- Create/Edit Modal -->
-    <div v-if="showModal" class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
-      <div class="modal-dialog modal-lg">
+    <!-- Manage Destinations Modal -->
+    <div v-if="showManageDestinationsModal" class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
+      <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">
-              {{ editingTemplate ? 'Edit Template' : 'Create New Template' }}
-            </h5>
-            <button type="button" class="btn-close" @click="closeModal"></button>
+            <h5 class="modal-title">Manage Destinations</h5>
+            <button type="button" class="btn-close" @click="closeManageDestinationsModal"></button>
           </div>
-          
-          <form @submit.prevent="saveTemplate">
-            <div class="modal-body">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">Template Name *</label>
-                  <input 
-                    v-model="form.name" 
-                    type="text" 
-                    class="form-control" 
-                    required
-                    placeholder="e.g., Holy Land Pilgrimage"
-                  />
-                </div>
-                
-                <div class="col-md-6">
-                  <label class="form-label">Destination *</label>
-                  <input 
-                    v-model="form.destination" 
-                    type="text" 
-                    class="form-control" 
-                    required
-                    placeholder="e.g., Jerusalem, Israel"
-                  />
-                </div>
-                
-                <div class="col-md-6">
-                  <label class="form-label">Duration (Days) *</label>
-                  <input 
-                    v-model="form.duration_days" 
-                    type="number" 
-                    class="form-control" 
-                    required
-                    min="1"
-                    max="365"
-                  />
-                </div>
-                
-                <div class="col-md-6">
-                  <label class="form-label">Trip Title *</label>
-                  <input 
-                    v-model="form.trip_title" 
-                    type="text" 
-                    class="form-control" 
-                    required
-                    placeholder="e.g., Journey to the Holy Land"
-                  />
-                </div>
-                
-                <div class="col-12">
-                  <label class="form-label">Trip Description</label>
-                  <textarea 
-                    v-model="form.trip_description" 
-                    class="form-control" 
-                    rows="4"
-                    placeholder="Detailed description of the trip itinerary, highlights, and what's included..."
-                  ></textarea>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Base Price</label>
-                  <div class="input-group">
-                    <span class="input-group-text">$</span>
-                    <input 
-                      v-model="form.base_price" 
-                      type="number" 
-                      class="form-control" 
-                      step="0.01"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Category</label>
-                  <select v-model="form.category" class="form-select">
-                    <option value="">Select Category</option>
-                    <option value="pilgrimage">Pilgrimage</option>
-                    <option value="cultural">Cultural</option>
-                    <option value="educational">Educational</option>
-                    <option value="spiritual">Spiritual Retreat</option>
-                    <option value="adventure">Adventure</option>
-                    <option value="leisure">Leisure</option>
-                  </select>
-                </div>
-
-                <div class="col-12">
-                  <label class="form-label">Included Services</label>
-                  <textarea 
-                    v-model="form.included_services" 
-                    class="form-control" 
-                    rows="3"
-                    placeholder="e.g., Round-trip airfare, First-class hotels, All meals, Professional guide..."
-                  ></textarea>
-                </div>
-
-                <div class="col-12">
-                  <label class="form-label">Not Included</label>
-                  <textarea 
-                    v-model="form.not_included" 
-                    class="form-control" 
-                    rows="3"
-                    placeholder="e.g., Travel insurance, Personal expenses, Optional excursions..."
-                  ></textarea>
-                </div>
-                
-                <div class="col-md-6">
-                  <div class="form-check">
-                    <input 
-                      v-model="form.is_active" 
-                      class="form-check-input" 
-                      type="checkbox" 
-                      id="isActive"
-                    />
-                    <label class="form-check-label" for="isActive">
-                      Active Template
-                    </label>
-                    <small class="form-text text-muted d-block">
-                      Only active templates will be available for creating trips
-                    </small>
-                  </div>
-                </div>
+          <div class="modal-body">
+            <form @submit.prevent="saveDestination">
+              <div class="mb-3">
+                <label class="form-label">Destination Name</label>
+                <input 
+                  v-model="newDestination" 
+                  type="text" 
+                  class="form-control" 
+                  placeholder="e.g., Jerusalem, Israel"
+                />
+                <div v-if="destinationError" class="text-danger mt-1">{{ destinationError }}</div>
               </div>
-            </div>
-            
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" @click="closeModal">
-                Cancel
-              </button>
-              <button type="submit" class="btn btn-primary" :disabled="saving">
-                <i class="fas fa-save me-2"></i>
-                {{ saving ? 'Saving...' : (editingTemplate ? 'Update Template' : 'Create Template') }}
-              </button>
-            </div>
-          </form>
+              <button type="submit" class="btn btn-primary" :disabled="!newDestination.trim()">Add Destination</button>
+            </form>
+            <ul class="list-group mt-3">
+              <li v-for="dest in destinations" :key="dest.id" class="list-group-item d-flex justify-content-between align-items-center">
+                {{ dest.name }}
+                <button class="btn btn-danger btn-sm" @click="removeDestination(dest.id)">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Delete Template</h5>
+            <button type="button" class="btn-close" @click="cancelDeleteTemplate"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete "{{ templateToDelete?.name }}"?</p>
+            <p class="text-danger">This action cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="cancelDeleteTemplate">Cancel</button>
+            <button class="btn btn-danger" @click="confirmDeleteTemplate">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- End Delete Confirmation Modal -->
+
+    <!-- Success Modal -->
+    <div v-if="showSuccessModal" class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Success</h5>
+            <button type="button" class="btn-close" @click="closeSuccessModal"></button>
+          </div>
+          <div class="modal-body">
+            <p>{{ successMessage }}</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" @click="closeSuccessModal">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- End Success Modal -->
 
     <!-- Templates List -->
     <div class="templates-list">
@@ -261,19 +192,14 @@
             </div>
             
             <div class="card-body">
-              <p class="card-text">
-                <strong>Destination:</strong> {{ template.destination }}<br>
-                <strong>Duration:</strong> {{ template.duration_days }} days<br>
-                <strong>Category:</strong> {{ template.category || 'Not specified' }}<br>
-                <strong>Base Price:</strong> {{ template.base_price ? `$${template.base_price}` : 'Not set' }}
+              <p class="card-text mb-1">
+                <strong>Destination:</strong> {{ getDestinationName(template.destination) }}
               </p>
-              
-              <p class="card-text">
+              <p class="card-text mb-1">
+                <strong>Name:</strong> {{ template.name }}
+              </p>
+              <p class="card-text mb-1">
                 <strong>Title:</strong> {{ template.trip_title }}
-              </p>
-              
-              <p class="card-text text-muted">
-                {{ template.trip_description ? template.trip_description.substring(0, 100) + '...' : 'No description' }}
               </p>
             </div>
             
@@ -308,73 +234,65 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import http from '@/shared/services/http'
 
-// Reactive data
+const router = useRouter()
+
 const templates = ref([])
+const destinations = ref([])
+
+const showManageDestinationsModal = ref(false)
+const showDeleteModal = ref(false)
+const templateToDelete = ref(null)
+const showSuccessModal = ref(false)
+const successMessage = ref('')
+const newDestination = ref('')
 const loading = ref(false)
-const saving = ref(false)
-const showModal = ref(false)
-const editingTemplate = ref(null)
 const searchTerm = ref('')
 const filterDestination = ref('')
 const filterStatus = ref('')
+const destinationError = ref('')
 
-const form = ref({
-  name: '',
-  destination: '',
-  duration_days: '',
-  trip_title: '',
-  trip_description: '',
-  base_price: '',
-  category: '',
-  included_services: '',
-  not_included: '',
-  is_active: true
-})
+function getDestinationName(destId) {
+  const dest = destinations.value.find(d => d.id === destId)
+  return dest ? dest.name : ''
+}
 
-// Computed properties
-const activeTemplates = computed(() => 
+const activeTemplates = computed(() =>
   templates.value.filter(t => t.is_active).length
 )
-
-const inactiveTemplates = computed(() => 
+const inactiveTemplates = computed(() =>
   templates.value.filter(t => !t.is_active).length
 )
-
-const destinations = computed(() => 
-  [...new Set(templates.value.map(t => t.destination).filter(Boolean))]
+const uniqueDestinations = computed(() =>
+  [...new Set(templates.value.map(t => t.destination).filter(Boolean))].length
 )
-
-const uniqueDestinations = computed(() => destinations.value.length)
-
 const filteredTemplates = computed(() => {
   let filtered = templates.value
-
   if (searchTerm.value) {
     const term = searchTerm.value.toLowerCase()
-    filtered = filtered.filter(t => 
-      t.name.toLowerCase().includes(term) ||
-      t.destination.toLowerCase().includes(term) ||
-      t.trip_title.toLowerCase().includes(term) ||
-      (t.trip_description && t.trip_description.toLowerCase().includes(term))
-    )
+    filtered = filtered.filter(t => {
+      const destName = getDestinationName(t.destination)?.toLowerCase() || ''
+      return (
+        t.name?.toLowerCase().includes(term) ||
+        destName.includes(term) ||
+        t.trip_title?.toLowerCase().includes(term) ||
+        (t.trip_description && t.trip_description.toLowerCase().includes(term))
+      )
+    })
   }
-
   if (filterDestination.value) {
-    filtered = filtered.filter(t => t.destination === filterDestination.value)
+    filtered = filtered.filter(t => String(t.destination) === String(filterDestination.value))
   }
-
   if (filterStatus.value === 'active') {
     filtered = filtered.filter(t => t.is_active)
   } else if (filterStatus.value === 'inactive') {
     filtered = filtered.filter(t => !t.is_active)
   }
-
   return filtered
 })
 
-// Methods
 const loadTemplates = async () => {
   try {
     loading.value = true
@@ -382,91 +300,54 @@ const loadTemplates = async () => {
     templates.value = response.data.results || response.data
   } catch (error) {
     console.error('Failed to load templates:', error)
-    alert('Failed to load templates. Please check your connection and try again.')
   } finally {
     loading.value = false
   }
 }
 
-const openCreateForm = () => {
-  editingTemplate.value = null
-  resetForm()
-  showModal.value = true
-}
-
-const editTemplate = (template) => {
-  editingTemplate.value = template
-  form.value = { ...template }
-  showModal.value = true
-}
-
-const duplicateTemplate = (template) => {
-  editingTemplate.value = null
-  form.value = { 
-    ...template, 
-    name: `${template.name} (Copy)`,
-    id: undefined
-  }
-  showModal.value = true
-}
-
-const saveTemplate = async () => {
+const loadDestinations = async () => {
   try {
-    saving.value = true
-    
-    if (editingTemplate.value) {
-      await http.put(`/api/marketing/templates/${editingTemplate.value.id}/`, form.value)
-    } else {
-      await http.post('/api/marketing/templates/', form.value)
-    }
-    
-    await loadTemplates()
-    closeModal()
-    
-    const action = editingTemplate.value ? 'updated' : 'created'
-    alert(`Template ${action} successfully!`)
+    const response = await http.get('/api/marketing/template-destinations/')
+    destinations.value = response.data.results || response.data
   } catch (error) {
-    console.error('Failed to save template:', error)
-    const errorMsg = error.response?.data?.error || 'Failed to save template'
-    alert(errorMsg)
-  } finally {
-    saving.value = false
+    console.error('Failed to load destinations:', error)
   }
 }
 
-const deleteTemplate = async (template) => {
-  if (!confirm(`Are you sure you want to delete "${template.name}"?\n\nThis action cannot be undone.`)) {
+const openCreateForm = () => {
+  router.push('/settings/trip-templates/create')
+}
+
+const openManageDestinationsModal = () => {
+  showManageDestinationsModal.value = true
+}
+
+const closeManageDestinationsModal = () => {
+  showManageDestinationsModal.value = false
+}
+
+const saveDestination = async () => {
+  if (!newDestination.value.trim()) {
+    destinationError.value = 'Destination name is required.'
     return
   }
-  
   try {
-    await http.delete(`/api/marketing/templates/${template.id}/`)
-    await loadTemplates()
-    alert('Template deleted successfully!')
+    await http.post('/api/marketing/template-destinations/', { name: newDestination.value })
+    newDestination.value = ''
+    destinationError.value = ''
+    await loadDestinations()
   } catch (error) {
-    console.error('Failed to delete template:', error)
-    alert('Failed to delete template. It may be in use by existing trips.')
+    console.error('Failed to save destination:', error)
+    destinationError.value = 'Failed to save destination.'
   }
 }
 
-const closeModal = () => {
-  showModal.value = false
-  editingTemplate.value = null
-  resetForm()
-}
-
-const resetForm = () => {
-  form.value = {
-    name: '',
-    destination: '',
-    duration_days: '',
-    trip_title: '',
-    trip_description: '',
-    base_price: '',
-    category: '',
-    included_services: '',
-    not_included: '',
-    is_active: true
+const removeDestination = async (destId) => {
+  try {
+    await http.delete(`/api/marketing/template-destinations/${destId}/`)
+    await loadDestinations()
+  } catch (error) {
+    console.error('Failed to remove destination:', error)
   }
 }
 
@@ -476,8 +357,49 @@ const clearFilters = () => {
   filterStatus.value = ''
 }
 
+const editTemplate = (template) => {
+  router.push(`/settings/trip-templates/edit/${template.id}`)
+}
+
+const duplicateTemplate = (template) => {
+  router.push(`/settings/trip-templates/create?duplicate=${template.id}`)
+}
+
+const deleteTemplate = (template) => {
+  templateToDelete.value = template
+  showDeleteModal.value = true
+}
+
+const confirmDeleteTemplate = async () => {
+  if (!templateToDelete.value) return
+  try {
+    await http.delete(`/api/marketing/templates/${templateToDelete.value.id}/`)
+    await loadTemplates()
+    successMessage.value = 'Template deleted successfully!'
+    showSuccessModal.value = true
+  } catch (error) {
+    console.error('Failed to delete template:', error)
+    successMessage.value = 'Failed to delete template. It may be in use by existing trips.'
+    showSuccessModal.value = true
+  } finally {
+    showDeleteModal.value = false
+    templateToDelete.value = null
+  }
+}
+
+const closeSuccessModal = () => {
+  showSuccessModal.value = false
+  successMessage.value = ''
+}
+
+const cancelDeleteTemplate = () => {
+  showDeleteModal.value = false
+  templateToDelete.value = null
+}
+
 onMounted(() => {
   loadTemplates()
+  loadDestinations()
 })
 </script>
 
@@ -486,35 +408,13 @@ onMounted(() => {
   padding: 20px;
 }
 
-.card {
-  transition: transform 0.2s;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-}
-
 .modal.show {
   display: block;
 }
 
-.btn-group .btn {
-  flex: 1;
-}
-
-.filters {
-  background-color: #f8f9fa;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.card-header {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.badge {
-  font-size: 0.75em;
+.list-group-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 </style>
