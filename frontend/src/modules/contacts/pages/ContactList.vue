@@ -11,42 +11,20 @@ const search = ref('')
 const selectedContact = ref(null)
 const nextPage = ref(null)
 const loadingMore = ref(false)
+const loading = ref(false)
+const totalCount = ref(0)
 
 const isEditing = ref(false)
 const editContactData = ref({})
 const isCreating = ref(false)
 const contactsContainer = ref(null)
-// Multi-field client-side filter for fallback
-const filteredContacts = computed(() => {
-  if (!search.value.trim()) return contacts.value
-  const q = search.value.toLowerCase()
-  return contacts.value.filter(c =>
-    [
-      c.first_name,
-      c.last_name,
-      c.email,
-      c.email2,
-      c.email3,
-      c.phone,
-      c.phone2,
-      c.phone3,
-      c.mobile,
-      c.company,
-      c.address,
-      c.city,
-      c.state,
-      c.zip,
-      c.tags,
-      c.mail_lists,
-      c.name_tag,
-      c.from_web,
-      c.hearabout,
-      c.unique_ident,
-      c.email_maillist
-    ]
-      .map(v => (v || '').toLowerCase())
-      .some(v => v.includes(q))
-  )
+const per = ref(25)
+const searchTimeout = ref(null)
+
+// Computed property for displayed contacts - no client-side filtering for pagination
+const displayedContacts = computed(() => {
+  // Server-side search will handle filtering
+  return contacts.value
 })
 
 dayjs.extend(utc)
@@ -58,10 +36,11 @@ function formatPST(dateStr) {
 }
 
 // Debounced server-side search with replace
-let searchTimeout = null
 watch(search, (val) => {
-  clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value)
+  }
+  searchTimeout.value = setTimeout(() => {
     if (val && val.trim().length > 1) {
       fetchContacts(`/api/contacts/?search=${encodeURIComponent(val.trim())}`, true)
     } else {
@@ -175,32 +154,59 @@ async function saveContact() {
   }
 }
 
+function stripBlanks(obj) {
+  const result = {}
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== '' && value !== null && value !== undefined) {
+      result[key] = value
+    }
+  }
+  return result
+}
+
 // Always replace contacts on search, only append on infinite scroll
-async function fetchContacts(url = '/api/contacts/', replace = true) {
-  loadingMore.value = true
+async function fetchContacts(url = null, append = false) {
+  if (!append) {
+    loading.value = true
+  }
+  loadingMore.value = append
+  
   try {
-    const res = await axios.get(url)
-    const data = res.data
-    if (Array.isArray(data)) {
-      contacts.value = data
-      nextPage.value = null
-    } else {
-      if (replace) {
-        contacts.value = data.results
-      } else {
-        // Only append for infinite scroll, not for search
+    const apiUrl = url || '/api/contacts/'
+    const params = url ? {} : {
+      per: per.value,
+      search: search.value.trim() || undefined
+    }
+    
+    const { data } = await axios.get(apiUrl, { params })
+    
+    if (data) {
+      if (append) {
         // Prevent duplicates when appending
         const existingIds = new Set(contacts.value.map(c => c.id))
-        const newResults = data.results.filter(c => !existingIds.has(c.id))
+        const newResults = (data.results || data).filter(c => !existingIds.has(c.id))
         contacts.value = [...contacts.value, ...newResults]
+      } else {
+        // Replace contacts for new search or initial load
+        contacts.value = data.results || data
+        totalCount.value = data.count || contacts.value.length
       }
       nextPage.value = data.next
     }
-    if (contacts.value.length && !selectedContact.value) selectedContact.value = contacts.value[0]
+    
+    if (contacts.value.length && !selectedContact.value) {
+      selectedContact.value = contacts.value[0]
+    }
   } catch (e) {
-    // fallback: do nothing, keep current contacts
+    console.error('Failed to fetch contacts:', e)
+    if (!append) {
+      contacts.value = []
+      totalCount.value = 0
+    }
+  } finally {
+    loading.value = false
+    loadingMore.value = false
   }
-  loadingMore.value = false
 }
 
 // Infinite scroll handler
@@ -211,8 +217,24 @@ function onScroll(e) {
     nextPage.value &&
     !loadingMore.value
   ) {
-    fetchContacts(nextPage.value, false)
+    fetchContacts(nextPage.value, true)
   }
+}
+
+// Search functionality
+function onSearch() {
+  // Reset pagination and fetch new results
+  nextPage.value = null
+  selectedContact.value = null
+  fetchContacts()
+}
+
+// Handle per-page change
+function onPerChange() {
+  // Reset pagination and fetch new results
+  nextPage.value = null
+  selectedContact.value = null
+  fetchContacts()
 }
 
 onMounted(() => {
@@ -221,372 +243,1157 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.edit-form-bg {
-  background: #0d6efd;
-  color: #fff;
-  transition: background 0.2s;
+/* Modern Contact Page Styles - Better Contrast */
+.contacts-page {
+  padding: 20px;
+  background: #fff; 
+  min-height: 100vh;
 }
-.edit-form-bg:hover {
-  background: #627aae;
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 0.8rem 2rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.page-title {
+  font-size: 1.8rem;
+  font-weight: 500;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+  text-decoration: none;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+/* Controls Section */
+.controls-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.5rem 1.5rem;
+  border-radius: 15px;
+  margin-bottom: 5px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  gap: 2rem;
+  backdrop-filter: blur(10px);
+}
+
+.search-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.search-box {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  z-index: 2;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.3rem 1rem 0.3rem 3rem;
+  border: 2px solid #e9ecef;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.per-page-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.total-count {
+  display: flex;
+  align-items: center;
+  padding: 0.3rem 0.8rem;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 20px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.total-count .control-label {
+  color: #667eea;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.control-label {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.form-select {
+  border: 2px solid #dddedf;
+  border-radius: 10px;
+  padding: 0.2rem 0.4rem 0.2rem 0.8rem;
+  background: #e9e9e9;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.form-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background: white;
+}
+
+.contacts-content {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  min-height: calc(100vh - 180px);
+  backdrop-filter: blur(10px);
+}
+
+.contacts-sidebar {
+  background: rgba(248, 249, 250, 0.8);
+  border-right: 1px solid rgba(233, 236, 239, 0.5);
+  height: calc(100vh - 180px);
+  overflow-y: auto;
+}
+
+.contacts-main {
+  background: white;
+  height: calc(100vh - 180px);
+  overflow-y: auto;
+}
+
+.contact-list-container {
+  padding: 1rem;
+}
+
+.contact-item {
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.contact-item:hover {
+  background: #f8f9fa;
+  border-color: #667eea;
+  transform: translateX(2px);
+}
+
+.contact-item.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+}
+
+.contact-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.contact-item.active .contact-avatar {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.contact-info h6 {
+  font-weight: 600;
+  margin: 0;
+  font-size: 0.95rem;
+  color: #2c3e50;
+}
+
+.contact-type,
+.contact-email {
+  font-size: 0.8rem;
+  margin: 0;
+  color: #6c757d;
+  font-weight: 400;
+}
+
+.contact-item.active .contact-info h6,
+.contact-item.active .contact-type,
+.contact-item.active .contact-email {
+  color: white;
+}
+
+.details-header {
+  padding: 2rem;
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  margin: 0;
+}
+
+.details-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.details-name {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.details-type {
+  color: #6c757d;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.info-section {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem;
+}
+
+.section-title {
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 500;
+  color: #6c757d;
+  min-width: 120px;
+  font-size: 0.9rem;
+}
+
+.info-value {
+  color: #2c3e50;
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.edit-btn {
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+  border: none;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.edit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  color: #dee2e6;
+  margin-bottom: 1rem;
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 1rem;
+  color: #667eea;
+  font-weight: 500;
+}
+
+.filter-tabs-container {
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  padding: 1rem 0;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 1rem;
+}
+
+.filter-tab {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  color: #6c757d;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-tab.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+}
+
+.filter-tab .badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 10px;
+}
+
+.search-container-header {
+  position: relative;
+  width: 300px;
+}
+
+.search-input-header {
+  width: 100%;
+  padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+  border: 1px solid #dee2e6;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  background: #f8f9fa;
+}
+
+.search-input-header:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+}
+
+.contacts-content {
+  background: white;
+  min-height: calc(100vh - 140px);
+}
+
+.contacts-sidebar {
+  background: #f8f9fa;
+  border-right: 1px solid #e9ecef;
+  height: calc(100vh - 140px);
+  overflow-y: auto;
+}
+
+.contacts-main {
+  background: white;
+  height: calc(100vh - 140px);
+  overflow-y: auto;
+}
+
+.contact-list-container {
+  padding: 1rem;
+}
+
+.contact-item {
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.contact-item:hover {
+  background: #f8f9fa;
+  border-color: #667eea;
+  transform: translateX(2px);
+}
+
+.contact-item.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+}
+
+.contact-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.contact-item.active .contact-avatar {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.contact-info h6 {
+  font-weight: 600;
+  margin: 0;
+  font-size: 0.95rem;
+  color: #2c3e50;
+}
+
+.contact-type {
+  font-size: 0.8rem;
+  margin: 0;
+  color: #6c757d;
+  font-weight: 400;
+}
+
+.contact-email {
+  font-size: 0.8rem;
+  margin: 0;
+  color: #6c757d;
+  font-weight: 400;
+}
+
+.contact-item.active .contact-info h6,
+.contact-item.active .contact-type,
+.contact-item.active .contact-email {
+  color: white;
+}
+
+.create-btn {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  border: none;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.create-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.details-header {
+  padding: 2rem;
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  margin: 0;
+}
+
+.details-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.details-name {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.details-type {
+  color: #6c757d;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.info-section {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem;
+}
+
+.section-title {
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 500;
+  color: #6c757d;
+  min-width: 120px;
+  font-size: 0.9rem;
+}
+
+.info-value {
+  color: #2c3e50;
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.edit-btn {
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+  border: none;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.edit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  color: #dee2e6;
+  margin-bottom: 1rem;
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 1rem;
+  color: #667eea;
+  font-weight: 500;
+}
+
+/* Remove old redundant styles */
+
+.edit-form {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.form-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  color: #495057;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+}
+
+.form-control:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background: white;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 25px;
+  padding: 0.75rem 2rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+  border: none;
+  border-radius: 25px;
+  padding: 0.75rem 2rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(108, 117, 125, 0.3);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+}
+
+.empty-state i {
+  font-size: 4rem;
+  color: #e9ecef;
+  margin-bottom: 1rem;
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 1rem;
+  color: #667eea;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .contacts-sidebar {
+    width: 100% !important;
+    border-radius: 15px 15px 0 0;
+  }
+  
+  .contacts-main {
+    border-radius: 0 0 15px 15px;
+  }
+  
+  .page-header {
+    border-radius: 15px 15px 0 0;
+  }
+  
+  .details-name {
+    font-size: 1.5rem;
+  }
+  
+  .details-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 1.8rem;
+  }
 }
 </style>
 
 <template>
-  <div ref="contactsContainer" class="d-flex" style="height: 100vh;">
-    <!-- Left: Contact List -->
-    <div
-      class="border-end bg-white"
-      style="width: 350px; display: flex; flex-direction: column;">
-      <!-- Create Contact button -->
-      <div class="px-3 pt-3">
-        <button class="btn btn-primary w-100" @click="startCreateContact">
-          + Create Contact
-        </button>
+  <div class="contacts-page">
+    <!-- header row -->
+    <div class="page-header">
+      <h3 class="page-title">CONTACTS</h3>
+      <button class="btn btn-primary" @click="startCreateContact">
+        <i class="fas fa-plus me-2"></i>
+        Create Contact
+      </button>
+    </div>
+
+    <!-- search and controls -->
+    <div class="controls-section">
+      <div class="search-controls">
+        <div class="search-box">
+          <i class="fas fa-search search-icon"></i>
+          <input 
+            v-model="search"
+            type="text"
+            placeholder="Search contacts by name, email, company…"
+            class="search-input">
+        </div>
       </div>
-      <!-- Search bar -->
-      <div class="pt-2 pb-2 px-3">  
-        <input
-          v-model="search"
-          class="form-control rounded-pill"
-          type="text"
-          placeholder="Search contacts..."
-        />
-      </div>
-      <!-- Contact list -->
-      <div class="flex-grow-1 overflow-auto" @scroll="onScroll">
-        <ul class="list-unstyled mb-0">
-          <li
-            v-for="contact in filteredContacts"
-            :key="contact.id"
-            :class="['d-flex align-items-center px-3 py-2 contact-item', {active: selectedContact && selectedContact.id === contact.id}]"
-            style="cursor: pointer;"
-            @click="selectContact(contact)"
-          >
-            <div class="me-3">
-              <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width:48px; height:48px; color:white; font-size:1.3rem;">
-                {{ getInitials(contact) }}
-              </div>
-            </div>
-            <div>
-              <div class="fw-bold">{{ contact.first_name }} {{ contact.last_name }}</div>
-              <div class="text-muted small">{{ contact.client_type_display }}</div>
-            </div>
-          </li>
-        </ul>
-        <div v-if="loadingMore" class="text-center py-2">Loading...</div>
+      
+      <div class="filter-controls">
+        <div class="per-page-selector">
+          <label class="control-label">Show:</label>
+          <select v-model.number="per" @change="onPerChange" class="form-select">
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <span class="control-label">entries</span>
+        </div>
+        <div v-if="totalCount" class="total-count">
+          <span class="control-label">{{ totalCount }} total contacts</span>
+        </div>
       </div>
     </div>
-    <!-- Right: Details/Edit/Create -->
-    <div class="flex-grow-1 p-4 overflow-auto">
-      <ContactCreate
-        v-if="isCreating"
-        @created="handleCreated"
-        @cancel="handleCreateCancel"
-      />
-      <div v-else-if="selectedContact && !isEditing">
-<div class="d-flex align-items-center mb-3">
-          <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width:72px; height:72px; color:white; font-size:2rem; background-color: #9dafc7;">
-            {{ getInitials(selectedContact) }}
+
+    <!-- Main Content Area -->
+    <div class="contacts-content">
+      <div class="container-fluid">
+        <div class="row g-0">
+          <!-- Left Sidebar: Contact List -->
+          <div class="col-md-4">
+            <div class="contacts-sidebar" @scroll="onScroll">
+              <!-- Contact List -->
+              <div class="contact-list-container">
+                <div v-if="loading && !contacts.length" class="loading-indicator">
+                  <i class="fas fa-spinner fa-spin me-2"></i>
+                  Loading contacts...
+                </div>
+                <div v-else-if="displayedContacts.length">
+                  <div
+                    v-for="contact in displayedContacts"
+                    :key="contact.id"
+                    :class="['contact-item', { active: selectedContact && selectedContact.id === contact.id }]"
+                    @click="selectContact(contact)"
+                  >
+                    <div class="d-flex align-items-center">
+                      <div class="contact-avatar me-3">
+                        {{ getInitials(contact) }}
+                      </div>
+                      <div class="contact-info flex-grow-1">
+                        <h6>{{ contact.first_name }} {{ contact.last_name }}</h6>
+                        <p class="contact-type">{{ contact.client_type_display }}</p>
+                        <p class="contact-email">{{ contact.email }}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="loadingMore" class="loading-indicator">
+                    <i class="fas fa-spinner fa-spin me-2"></i>
+                    Loading more contacts...
+                  </div>
+                </div>
+                <div v-else class="empty-state">
+                  <i class="fas fa-user-slash"></i>
+                  <p>{{ search ? 'No contacts found matching your search' : 'No contacts found' }}</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div>
-            <div class="h4 mb-0">{{ selectedContact.first_name }} {{ selectedContact.last_name }}</div>
-            <div class="text-muted">{{ selectedContact.client_type_display }}</div>
+          
+          <!-- Right Main Content -->
+          <div class="col-md-8">
+            <div class="contacts-main">
+        <!-- Create Contact Form -->
+        <ContactCreate
+          v-if="isCreating"
+          @created="handleCreated"
+          @cancel="handleCreateCancel"
+        />
+        
+        <!-- Contact Details View -->
+        <div v-else-if="selectedContact && !isEditing" class="p-4">
+          <!-- Contact Header -->
+          <div class="details-header">
+            <div class="d-flex align-items-center">
+              <div class="details-avatar me-4">
+                {{ getInitials(selectedContact) }}
+              </div>
+              <div class="flex-grow-1">
+                <h1 class="details-name">{{ selectedContact.first_name }} {{ selectedContact.last_name }}</h1>
+                <p class="details-type">{{ selectedContact.client_type_display }}</p>
+              </div>
+              <button class="edit-btn" @click="editContact(selectedContact)">
+                <i class="fas fa-edit me-2"></i>
+                Edit Contact
+              </button>
+            </div>
+          </div>
+
+          <!-- Contact Information Sections -->
+          <div class="row">
+            <!-- Basic Information -->
+            <div class="col-md-6">
+              <div class="info-section">
+                <h5 class="section-title">
+                  <i class="fas fa-user me-2"></i>
+                  Basic Information
+                </h5>
+                <div v-if="selectedContact.company" class="info-item">
+                  <span class="info-label">Company:</span>
+                  <span class="info-value">{{ selectedContact.company }}</span>
+                </div>
+                <div v-if="selectedContact.website" class="info-item">
+                  <span class="info-label">Website:</span>
+                  <span class="info-value">
+                    <a :href="selectedContact.website" target="_blank" class="text-decoration-none">
+                      {{ selectedContact.website }}
+                    </a>
+                  </span>
+                </div>
+                <div v-if="selectedContact.gender" class="info-item">
+                  <span class="info-label">Gender:</span>
+                  <span class="info-value">{{ selectedContact.gender }}</span>
+                </div>
+                <div v-if="selectedContact.date_birth" class="info-item">
+                  <span class="info-label">Date of Birth:</span>
+                  <span class="info-value">{{ selectedContact.date_birth }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contact Details -->
+            <div class="col-md-6">
+              <div class="info-section">
+                <h5 class="section-title">
+                  <i class="fas fa-phone me-2"></i>
+                  Contact Information
+                </h5>
+                <div v-if="selectedContact.email" class="info-item">
+                  <span class="info-label">Primary Email:</span>
+                  <span class="info-value">{{ selectedContact.email }}</span>
+                </div>
+                <div v-if="selectedContact.email2" class="info-item">
+                  <span class="info-label">Email 2:</span>
+                  <span class="info-value">{{ selectedContact.email2 }}</span>
+                </div>
+                <div v-if="selectedContact.email3" class="info-item">
+                  <span class="info-label">Email 3:</span>
+                  <span class="info-value">{{ selectedContact.email3 }}</span>
+                </div>
+                <div v-if="selectedContact.phone" class="info-item">
+                  <span class="info-label">Phone:</span>
+                  <span class="info-value">{{ selectedContact.phone }}</span>
+                </div>
+                <div v-if="selectedContact.mobile" class="info-item">
+                  <span class="info-label">Mobile:</span>
+                  <span class="info-value">{{ selectedContact.mobile }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Address Information -->
+          <div v-if="selectedContact.address || selectedContact.city || selectedContact.state || selectedContact.zip">
+            <div class="info-section">
+              <h5 class="section-title">
+                <i class="fas fa-map-marker-alt me-2"></i>
+                Address Information
+              </h5>
+              <div v-if="selectedContact.address" class="info-item">
+                <span class="info-label">Address:</span>
+                <span class="info-value">{{ selectedContact.address }}</span>
+              </div>
+              <div class="d-flex gap-4">
+                <div v-if="selectedContact.city" class="info-item flex-fill">
+                  <span class="info-label">City:</span>
+                  <span class="info-value">{{ selectedContact.city }}</span>
+                </div>
+                <div v-if="selectedContact.state" class="info-item flex-fill">
+                  <span class="info-label">State:</span>
+                  <span class="info-value">{{ selectedContact.state }}</span>
+                </div>
+                <div v-if="selectedContact.zip" class="info-item flex-fill">
+                  <span class="info-label">Zip:</span>
+                  <span class="info-value">{{ selectedContact.zip }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Emergency Contact -->
+          <div v-if="selectedContact.ems_name || selectedContact.ems_phone">
+            <div class="info-section">
+              <h5 class="section-title">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Emergency Contact
+              </h5>
+              <div v-if="selectedContact.ems_name" class="info-item">
+                <span class="info-label">Emergency Contact:</span>
+                <span class="info-value">{{ selectedContact.ems_name }}</span>
+              </div>
+              <div v-if="selectedContact.ems_phone" class="info-item">
+                <span class="info-label">Emergency Phone:</span>
+                <span class="info-value">{{ selectedContact.ems_phone }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional Information -->
+          <div v-if="selectedContact.notes || selectedContact.tags">
+            <div class="info-section">
+              <h5 class="section-title">
+                <i class="fas fa-sticky-note me-2"></i>
+                Additional Information
+              </h5>
+              <div v-if="selectedContact.notes" class="info-item">
+                <span class="info-label">Notes:</span>
+                <span class="info-value">{{ selectedContact.notes }}</span>
+              </div>
+              <div v-if="selectedContact.tags" class="info-item">
+                <span class="info-label">Tags:</span>
+                <span class="info-value">{{ selectedContact.tags }}</span>
+              </div>
+              <div v-if="selectedContact.date_created" class="info-item">
+                <span class="info-label">Created:</span>
+                <span class="info-value">{{ formatPST(selectedContact.date_created) }}</span>
+              </div>
+              <div v-if="selectedContact.date_updated" class="info-item">
+                <span class="info-label">Last Updated:</span>
+                <span class="info-value">{{ formatPST(selectedContact.date_updated) }}</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="mb-2" v-if="selectedContact.phone"><strong>Mobile:</strong> {{ selectedContact.phone }}</div>
-        <div class="mb-2" v-if="selectedContact.email || selectedContact.email2 || selectedContact.email3">
-          <span v-if="selectedContact.email"><strong>Email:</strong> {{ selectedContact.email }}</span>
-          <span v-if="selectedContact.email2" class="ms-3"><strong>Email 2:</strong> {{ selectedContact.email2 }}</span>
-          <span v-if="selectedContact.email3" class="ms-3"><strong>Email 3:</strong> {{ selectedContact.email3 }}</span>
-        </div>
-        <div class="mb-2" v-if="selectedContact.website">
-          <strong>Website:</strong>
-          <a :href="selectedContact.website" target="_blank">{{ selectedContact.website }}</a>
-        </div>
-        <div class="mb-2" v-if="selectedContact.address || selectedContact.city || selectedContact.state || selectedContact.zip">
-          <span v-if="selectedContact.address"><strong>Address:</strong> {{ selectedContact.address }}</span>
-          <span v-if="selectedContact.city" class="ms-3"><strong>City:</strong> {{ selectedContact.city }}</span>
-          <span v-if="selectedContact.state" class="ms-3"><strong>State:</strong> {{ selectedContact.state }}</span>
-          <span v-if="selectedContact.zip" class="ms-3"><strong>Zip:</strong> {{ selectedContact.zip }}</span>
-        </div>
-        <div class="mb-2" v-if="selectedContact.company"><strong>Company:</strong> {{ selectedContact.company }}</div>
-        <div class="mb-2" v-if="selectedContact.phone || selectedContact.phone2 || selectedContact.phone3">
-          <span v-if="selectedContact.phone"><strong>Phone:</strong> {{ selectedContact.phone }}</span>
-          <span v-if="selectedContact.phone2" class="ms-3"><strong>Phone 2:</strong> {{ selectedContact.phone2 }}</span>
-          <span v-if="selectedContact.phone3" class="ms-3"><strong>Phone 3:</strong> {{ selectedContact.phone3 }}</span>
-        </div>
-        <div class="mb-2" v-if="selectedContact.notes"><strong>Notes:</strong> {{ selectedContact.notes }}</div>
-        <div class="mb-2" v-if="selectedContact.gender"><strong>Gender:</strong> {{ selectedContact.gender }}</div>
-        <div class="mb-2" v-if="selectedContact.date_birth"><strong>Date of Birth:</strong> {{ selectedContact.date_birth }}</div>
-        <div class="mb-2" v-if="selectedContact.ems_name"><strong>Emergency Name:</strong> {{ selectedContact.ems_name }}</div>
-        <div class="mb-2" v-if="selectedContact.ems_phone"><strong>Emergency Phone:</strong> {{ selectedContact.ems_phone }}</div>
-        <div class="mb-2" v-if="selectedContact.pp_number"><strong>Passport Number:</strong> {{ selectedContact.pp_number }}</div>
-        <div class="mb-2" v-if="selectedContact.pp_date_issue"><strong>Passport Date Issue:</strong> {{ selectedContact.pp_date_issue }}</div>
-        <div class="mb-2" v-if="selectedContact.pp_date_expire"><strong>Passport Date Expire:</strong> {{ selectedContact.pp_date_expire }}</div>
-        <div class="mb-2" v-if="selectedContact.pp_place_issue"><strong>Passport Place Issue:</strong> {{ selectedContact.pp_place_issue }}</div>
-        <div class="mb-2" v-if="selectedContact.pp_nationality"><strong>Passport Nationality:</strong> {{ selectedContact.pp_nationality }}</div>
-        <div class="mb-2" v-if="selectedContact.pp_visa"><strong>Passport Visa:</strong> {{ selectedContact.pp_visa }}</div>
-        <div class="mb-2" v-if="selectedContact.pp_visa_note"><strong>Passport Visa Note:</strong> {{ selectedContact.pp_visa_note }}</div>
-        <div class="mb-2" v-if="selectedContact.pp_visa_received"><strong>Passport Visa Received:</strong> {{ selectedContact.pp_visa_received }}</div>
-        <div class="mb-2" v-if="selectedContact.want_single_room"><strong>Want Single Room:</strong> {{ selectedContact.want_single_room }}</div>
-        <div class="mb-2" v-if="selectedContact.want_roomate"><strong>Want Roommate:</strong> {{ selectedContact.want_roomate }}</div>
-        <div class="mb-2" v-if="selectedContact.have_roomate"><strong>Have Roommate:</strong> {{ selectedContact.have_roomate }}</div>
-        <div class="mb-2" v-if="selectedContact.have_roomate_name"><strong>Have Roommate Name:</strong> {{ selectedContact.have_roomate_name }}</div>
-        <div class="mb-2" v-if="selectedContact.have_roomate_id"><strong>Have Roommate ID:</strong> {{ selectedContact.have_roomate_id }}</div>
-        <div class="mb-2" v-if="selectedContact.registered_at_event"><strong>Registered at Event:</strong> {{ selectedContact.registered_at_event }}</div>
-        <div class="mb-2" v-if="selectedContact.tags"><strong>Tags:</strong> {{ selectedContact.tags }}</div>
-        <div class="mb-2" v-if="selectedContact.mail_lists"><strong>Mail Lists:</strong> {{ selectedContact.mail_lists }}</div>
-        <div class="mb-2" v-if="selectedContact.name_tag"><strong>Name Tag:</strong> {{ selectedContact.name_tag }}</div>
-        <div class="mb-2" v-if="selectedContact.from_web"><strong>From Web:</strong> {{ selectedContact.from_web }}</div>
-        <div class="mb-2" v-if="selectedContact.hearabout"><strong>Hear About:</strong> {{ selectedContact.hearabout }}</div>
-        <div class="mb-2" v-if="selectedContact.date_created">
-          <strong>Date Created:</strong> {{ formatPST(selectedContact.date_created) }}
-        </div>
-        <div class="mb-2" v-if="selectedContact.date_updated">
-          <strong>Last Updated:</strong> {{ formatPST(selectedContact.date_updated) }}
-        </div>
-        <button class="px-8 py-2 rounded shadow-sm text-white" @click="editContact(selectedContact)" style="background: gray; color: white;">Edit</button>
-      </div>
-      
-      
-      <form v-else-if="selectedContact && isEditing" @submit.prevent="saveContact" class="p-4 rounded shadow-sm" style="background: #e2e9e8; color: black;">
-      <!-- ────────── Contact edit form fields ────────── -->
-        <div class="row g-3 mb-3">
-        <div class="col-md-4">
-            <label class="form-label mb-1">First Name</label>
-            <input v-model="editContactData.first_name" class="form-control shadow-sm" />
-        </div>
+        
+        <!-- Edit Contact Form -->
+        <div v-else-if="selectedContact && isEditing" class="p-4">
+          <form @submit.prevent="saveContact" class="edit-form">
+            <div class="d-flex align-items-center mb-4">
+              <h2 class="mb-0">
+                <i class="fas fa-edit me-2"></i>
+                Edit Contact
+              </h2>
+            </div>
 
-        <div class="col-md-4">
-            <label class="form-label mb-1">Middle Name</label>
-            <input v-model="editContactData.middle_name" class="form-control shadow-sm" />
-        </div>
+            <!-- Basic Information Section -->
+            <div class="form-section">
+              <h5 class="section-title">Basic Information</h5>
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">First Name</label>
+                  <input v-model="editContactData.first_name" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Middle Name</label>
+                  <input v-model="editContactData.middle_name" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Last Name</label>
+                  <input v-model="editContactData.last_name" class="form-control" />
+                </div>
+              </div>
+              <div class="row g-3 mt-2">
+                <div class="col-md-3">
+                  <label class="form-label">Company</label>
+                  <input v-model="editContactData.company" class="form-control">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Date of Birth</label>
+                  <input v-model="editContactData.date_birth" type="date" class="form-control">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Website</label>
+                  <input v-model="editContactData.website" type="url" class="form-control">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Gender</label>
+                  <input v-model="editContactData.gender" class="form-control">
+                </div>
+              </div>
+            </div>
 
-        <div class="col-md-4">
-            <label class="form-label mb-1">Last Name</label>
-            <input v-model="editContactData.last_name" class="form-control shadow-sm" />
-        </div>
-        </div>
-        <!-- 1 rigid row: Company · DOB · Website · Gender -->
-        <div class="row row-cols-4 g-3 flex-nowrap mb-3">
-        <div class="col">
-            <label class="form-label mb-1">Company</label>
-            <input v-model="editContactData.company" class="form-control shadow-sm">
-        </div>
+            <!-- Contact Information Section -->
+            <div class="form-section">
+              <h5 class="section-title">Contact Information</h5>
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">Primary Email</label>
+                  <input v-model="editContactData.email" type="email" class="form-control">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Email 2</label>
+                  <input v-model="editContactData.email2" type="email" class="form-control">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Email 3</label>
+                  <input v-model="editContactData.email3" type="email" class="form-control">
+                </div>
+              </div>
+              <div class="row g-3 mt-2">
+                <div class="col-md-3">
+                  <label class="form-label">Phone</label>
+                  <input v-model="editContactData.phone" type="tel" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Phone 2</label>
+                  <input v-model="editContactData.phone2" type="tel" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Phone 3</label>
+                  <input v-model="editContactData.phone3" type="tel" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Mobile</label>
+                  <input v-model="editContactData.mobile" type="tel" class="form-control" />
+                </div>
+              </div>
+            </div>
 
-        <div class="col">
-            <label class="form-label mb-1">Date&nbsp;of&nbsp;Birth</label>
-            <input v-model="editContactData.date_birth" type="date" class="form-control shadow-sm">
-        </div>
+            <!-- Address Section -->
+            <div class="form-section">
+              <h5 class="section-title">Address Information</h5>
+              <div class="mb-3">
+                <label class="form-label">Address</label>
+                <input v-model="editContactData.address" class="form-control" />
+              </div>
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">City</label>
+                  <input v-model="editContactData.city" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">State</label>
+                  <input v-model="editContactData.state" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Zip</label>
+                  <input v-model="editContactData.zip" class="form-control" />
+                </div>
+              </div>
+            </div>
 
-        <div class="col">
-            <label class="form-label mb-1">Website</label>
-            <input v-model="editContactData.website" type="url" class="form-control shadow-sm">
-        </div>
+            <!-- Emergency Contact Section -->
+            <div class="form-section">
+              <h5 class="section-title">Emergency Contact</h5>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Emergency Contact Name</label>
+                  <input v-model="editContactData.ems_name" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Emergency Contact Phone</label>
+                  <input v-model="editContactData.ems_phone" type="tel" class="form-control">
+                </div>
+              </div>
+            </div>
 
-        <div class="col">
-            <label class="form-label mb-1">Gender</label>
-            <input v-model="editContactData.gender" class="form-control shadow-sm">
-        </div>
-        </div>
-        <!-- Address -->
-        <div class="col mb-3">
-        <label class="form-label mb-1">Address</label>
-        <input v-model="editContactData.address" class="form-control shadow-sm" />
-        </div>
+            <!-- Additional Information Section -->
+            <div class="form-section">
+              <h5 class="section-title">Additional Information</h5>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Tags</label>
+                  <input v-model="editContactData.tags" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Mail Lists</label>
+                  <input v-model="editContactData.mail_lists" class="form-control">
+                </div>
+              </div>
+              <div class="mt-3">
+                <label class="form-label">Notes</label>
+                <textarea v-model="editContactData.notes" rows="4" class="form-control"></textarea>
+              </div>
+            </div>
 
-        <!-- City / State / Zip on one line -->
-        <div class="row g-3 mb-3">
-        <div class="col-md-4">
-            <label class="form-label mb-1">City</label>
-            <input v-model="editContactData.city" class="form-control shadow-sm" />
+            <!-- Form Actions -->
+            <div class="d-flex gap-3 mt-4">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>
+                Save Changes
+              </button>
+              <button type="button" class="btn btn-secondary" @click="handleEditCancel">
+                <i class="fas fa-times me-2"></i>
+                Cancel
+              </button>
+            </div>
+          </form>
         </div>
-
-        <div class="col-md-4">
-            <label class="form-label mb-1">State</label>
-            <input v-model="editContactData.state" class="form-control shadow-sm" />
+        
+        <!-- Empty State -->
+        <div v-else class="empty-state">
+          <i class="fas fa-user-circle"></i>
+          <h5>Select a contact to view details</h5>
+          <p>Choose a contact from the list to see their information</p>
         </div>
-
-        <div class="col-md-4">
-            <label class="form-label mb-1">Zip</label>
-            <input v-model="editContactData.zip" class="form-control shadow-sm" />
+            </div>
+          </div>
         </div>
-        </div>
-        <!-- Phone / Phone 2 / Phone 3 / Mobile on one line -->
-        <div class="row g-3 mb-3">
-        <div class="col-md-3">
-            <label class="form-label mb-1">Phone</label>
-            <input v-model="editContactData.phone"  type="tel" class="form-control shadow-sm" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label mb-1">Phone 2</label>
-            <input v-model="editContactData.phone2" type="tel" class="form-control shadow-sm" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label mb-1">Phone 3</label>
-            <input v-model="editContactData.phone3" type="tel" class="form-control shadow-sm" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label mb-1">Mobile</label>
-            <input v-model="editContactData.mobile" type="tel" class="form-control shadow-sm" />
-        </div>
-        </div>
-        <!-- Email / Email 2 / Email 3 on one line -->
-        <div class="row g-3 mb-3">
-        <div class="col-md-4">
-            <label class="form-label mb-1">Email</label>
-            <input v-model="editContactData.email"  type="email" class="form-control shadow-sm">
-        </div>
-
-        <div class="col-md-4">
-            <label class="form-label mb-1">Email 2</label>
-            <input v-model="editContactData.email2" type="email" class="form-control shadow-sm">
-        </div>
-
-        <div class="col-md-4">
-            <label class="form-label mb-1">Email 3</label>
-            <input v-model="editContactData.email3" type="email" class="form-control shadow-sm">
-        </div>
-        </div>
-        <!-- EMS Name · EMS Phone (one rigid row, 50 % / 50 %) -->
-        <div class="row row-cols-2 g-3 flex-nowrap mb-3">
-        <div class="col">
-            <label class="form-label mb-1">EMS Name</label>
-            <input v-model="editContactData.ems_name" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">EMS Phone</label>
-            <input v-model="editContactData.ems_phone" type="tel" class="form-control shadow-sm">
-        </div>
-        </div>
-        <!--──────────── Passport details : 4 inputs, one line on ≥ md ────────────-->
-        <div class="row row-cols-1 row-cols-md-4 g-3 mb-3">
-        <div class="col">
-            <label class="form-label mb-1">Passport&nbsp;Number</label>
-            <input v-model="editContactData.pp_number" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Issue&nbsp;Date</label>
-            <input v-model="editContactData.pp_date_issue" type="date" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Expire&nbsp;Date</label>
-            <input v-model="editContactData.pp_date_expire" type="date" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Place&nbsp;Issue</label>
-            <input v-model="editContactData.pp_place_issue" class="form-control shadow-sm">
-        </div>
-        </div>
-        <!--──────── Passport visa details : 4 inputs, one line on ≥ md ────────-->
-        <div class="row row-cols-1 row-cols-md-4 g-3 mb-3">
-        <div class="col">
-            <label class="form-label mb-1">Passport&nbsp;Nationality</label>
-            <input v-model="editContactData.pp_nationality" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Passport&nbsp;Visa</label>
-            <input v-model="editContactData.pp_visa" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Visa&nbsp;Note</label>
-            <input v-model="editContactData.pp_visa_note" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Visa&nbsp;Received</label>
-            <input v-model="editContactData.pp_visa_received" class="form-control shadow-sm">
-        </div>
-        </div>
-        <!--──── Room-preferences : 3 equal–width inputs, one line on ≥ md ────-->
-        <div class="row row-cols-1 row-cols-md-3 g-3 mb-3">
-        <div class="col">
-            <label class="form-label mb-1">Want&nbsp;Single&nbsp;Room</label>
-            <input v-model="editContactData.want_single_room" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Want&nbsp;Roommate</label>
-            <input v-model="editContactData.want_roomate" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Have&nbsp;Roommate</label>
-            <input v-model="editContactData.have_roomate" class="form-control shadow-sm">
-        </div>
-        </div>
-        <!--──── Room-mate details : 2 equal fields, one line on ≥ md ────-->
-        <div class="row row-cols-1 row-cols-md-2 g-3 mb-3">
-        <div class="col">
-            <label class="form-label mb-1">Roommate&nbsp;Name</label>
-            <input v-model="editContactData.have_roomate_name" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Roommate&nbsp;ID</label>
-            <input v-model="editContactData.have_roomate_id" type="number" class="form-control shadow-sm">
-        </div>
-        </div>
-        <!--──── Registered / Tags / Mail-lists / Name-tag : 4-up on ≥ md ────-->
-        <div class="row row-cols-1 row-cols-md-4 g-3 mb-3">
-        <div class="col">
-            <label class="form-label mb-1">Registered&nbsp;at&nbsp;Event</label>
-            <input v-model="editContactData.registered_at_event" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Tags</label>
-            <input v-model="editContactData.tags" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Mail&nbsp;Lists</label>
-            <input v-model="editContactData.mail_lists" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Name&nbsp;Tag</label>
-            <input v-model="editContactData.name_tag" class="form-control shadow-sm">
-        </div>
-        </div>
-        <!--──── From-web / Hear-about / Unique-ID / Email-mail-list : 4-up ────-->
-        <div class="row row-cols-1 row-cols-md-4 g-3 mb-3">
-        <div class="col">
-            <label class="form-label mb-1">From&nbsp;Web</label>
-            <input v-model="editContactData.from_web" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Hear&nbsp;About</label>
-            <input v-model="editContactData.hearabout" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Unique&nbsp;Ident</label>
-            <input v-model="editContactData.unique_ident" class="form-control shadow-sm">
-        </div>
-
-        <div class="col">
-            <label class="form-label mb-1">Email&nbsp;Mail-list</label>
-            <input v-model="editContactData.email_maillist" class="form-control shadow-sm">
-        </div>
-        </div>
-        <!--      Notes.      -->
-        <div class="col-12 mb-3">
-        <label class="form-label"><strong>Notes</strong></label>
-        <textarea v-model="editContactData.notes" rows="3" class="form-control shadow-sm"></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary me-2">Save</button>
-        <button type="button" class="btn btn-secondary" @click="handleEditCancel">Cancel</button>
-      </form>
-      <div v-else class="text-muted d-flex align-items-center justify-content-center h-100">
-        Select a contact to view details
       </div>
     </div>
   </div>
