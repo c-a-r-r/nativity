@@ -17,6 +17,24 @@ def current_user(request):
         'email': user.email,
     })
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_users_by_role(request):
+    """Get users filtered by role (account managers vs sales agents)"""
+    role = request.GET.get('role', None)
+    
+    if role == 'managers':
+        # Get account managers (agent='NO')
+        users = Usuario.objects.filter(agent='NO', activo='YES').values('id', 'nombre', 'agent')
+    elif role == 'agents':
+        # Get sales agents (agent='YES')
+        users = Usuario.objects.filter(agent='YES', activo='YES').values('id', 'nombre', 'agent')
+    else:
+        # Get all active users
+        users = Usuario.objects.filter(activo='YES').values('id', 'nombre', 'agent')
+    
+    return Response(list(users))
+
 class ModuleViewSet(viewsets.ModelViewSet):
     queryset = Module.objects.all()
     serializer_class = ModuleSerializer
