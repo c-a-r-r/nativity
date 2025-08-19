@@ -10,6 +10,7 @@ import contactRoutes   from '@/modules/contacts/routes'
 import financialRoutes from '@/modules/financials/routes'
 import marketingRoutes from '@/modules/marketing/routes'
 import settingsRoutes from '@/modules/settings/routes'
+import tripRoutes from '@/modules/trips/routes'
 
 /* ------------------------------------------------------------
    2.  Root-level routes
@@ -25,7 +26,8 @@ const routes = [
       ...quoteRoutes,
       ...contactRoutes,
       ...financialRoutes,
-      ...settingsRoutes
+      ...settingsRoutes,
+      ...tripRoutes
       // Do NOT include ...marketingRoutes here for public pages
     ],
   },
@@ -41,6 +43,13 @@ const routes = [
     name: 'TripPrivate',
     component: () => import('@/modules/marketing/pages/TripPrivate.vue'),
     meta: { requiresAuth: false }
+  },
+  // Trip registration route (requires customer authentication)
+  {
+    path: '/trips/register/:id',
+    name: 'TripRegistration',
+    component: () => import('@/modules/trips/TripRegistrationForm.vue'),
+    meta: { requiresAuth: false } // Will handle auth internally
   },
   { path: '/login', name: 'Login', component: Login },
   { path: '/:pathMatch(.*)*', redirect: '/login' },
