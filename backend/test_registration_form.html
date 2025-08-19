@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Registration Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Registration Form</h1>
+    
+    <form id="registrationForm">
+        <div class="section">
+            <h3>Trip Information</h3>
+            <div class="form-group">
+                <label for="pilgrimage_id">Pilgrimage ID:</label>
+                <input type="number" id="pilgrimage_id" name="pilgrimage_id" value="1" required>
+            </div>
+            <div class="form-group">
+                <label for="trip_title">Trip Title:</label>
+                <input type="text" id="trip_title" name="trip_title" value="Holy Land Pilgrimage 2024" required>
+            </div>
+            <div class="form-group">
+                <label for="trip_price">Trip Price:</label>
+                <input type="number" id="trip_price" name="trip_price" value="3299.00" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="customer_notes">Customer Notes:</label>
+                <textarea id="customer_notes" name="customer_notes" rows="3">Looking forward to this spiritual journey</textarea>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Passenger Information</h3>
+            <div class="form-group">
+                <label for="title">Title:</label>
+                <select id="title" name="title" required>
+                    <option value="Mr.">Mr.</option>
+                    <option value="Mrs.">Mrs.</option>
+                    <option value="Ms.">Ms.</option>
+                    <option value="Dr.">Dr.</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="first_name">First Name:</label>
+                <input type="text" id="first_name" name="first_name" value="John" required>
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last Name:</label>
+                <input type="text" id="last_name" name="last_name" value="Doe" required>
+            </div>
+            <div class="form-group">
+                <label for="date_of_birth">Date of Birth:</label>
+                <input type="date" id="date_of_birth" name="date_of_birth" value="1980-05-15" required>
+            </div>
+            <div class="form-group">
+                <label for="gender">Gender:</label>
+                <select id="gender" name="gender" required>
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone:</label>
+                <input type="tel" id="phone" name="phone" value="555-123-4567" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" value="john.doe@example.com" required>
+            </div>
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <input type="text" id="address" name="address" value="123 Main St" required>
+            </div>
+            <div class="form-group">
+                <label for="city">City:</label>
+                <input type="text" id="city" name="city" value="Anytown" required>
+            </div>
+            <div class="form-group">
+                <label for="state">State:</label>
+                <input type="text" id="state" name="state" value="CA" required>
+            </div>
+            <div class="form-group">
+                <label for="zip">ZIP Code:</label>
+                <input type="text" id="zip" name="zip" value="12345" required>
+            </div>
+            <div class="form-group">
+                <label for="country_id">Country:</label>
+                <select id="country_id" name="country_id" required>
+                    <option value="1">United States</option>
+                    <option value="2">Canada</option>
+                    <option value="3">United Kingdom</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Passport Information</h3>
+            <div class="form-group">
+                <label for="passport_number">Passport Number:</label>
+                <input type="text" id="passport_number" name="passport_number" value="123456789" required>
+            </div>
+            <div class="form-group">
+                <label for="passport_exp">Passport Expiration:</label>
+                <input type="date" id="passport_exp" name="passport_exp" value="2025-05-15" required>
+            </div>
+            <div class="form-group">
+                <label for="passport_country_id">Passport Country:</label>
+                <select id="passport_country_id" name="passport_country_id" required>
+                    <option value="1">United States</option>
+                    <option value="2">Canada</option>
+                    <option value="3">United Kingdom</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Emergency Contact</h3>
+            <div class="form-group">
+                <label for="emergency_contact_name">Emergency Contact Name:</label>
+                <input type="text" id="emergency_contact_name" name="emergency_contact_name" value="Jane Doe" required>
+            </div>
+            <div class="form-group">
+                <label for="emergency_contact_relationship">Relationship:</label>
+                <input type="text" id="emergency_contact_relationship" name="emergency_contact_relationship" value="Wife" required>
+            </div>
+            <div class="form-group">
+                <label for="emergency_contact_phone">Emergency Contact Phone:</label>
+                <input type="tel" id="emergency_contact_phone" name="emergency_contact_phone" value="555-987-6543" required>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Payment Information</h3>
+            <div class="form-group">
+                <label for="payment_type">Payment Type:</label>
+                <select id="payment_type" name="payment_type" required>
+                    <option value="cc">Credit Card</option>
+                    <option value="check">Check</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="payment_plan">Payment Plan:</label>
+                <select id="payment_plan" name="payment_plan" required>
+                    <option value="full">Full Payment</option>
+                    <option value="deposit">Deposit Only</option>
+                    <option value="installments">Installments</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="total_amount">Total Amount (with 3% processing fee):</label>
+                <input type="number" id="total_amount" name="total_amount" value="3399.97" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="credit_card_number">Credit Card Number:</label>
+                <input type="text" id="credit_card_number" name="credit_card_number" value="4111111111111111">
+            </div>
+            <div class="form-group">
+                <label for="exp_month">Expiration Month:</label>
+                <input type="text" id="exp_month" name="exp_month" value="12" maxlength="2">
+            </div>
+            <div class="form-group">
+                <label for="exp_year">Expiration Year:</label>
+                <input type="text" id="exp_year" name="exp_year" value="2025" maxlength="4">
+            </div>
+            <div class="form-group">
+                <label for="cvv">CVV:</label>
+                <input type="text" id="cvv" name="cvv" value="123" maxlength="4">
+            </div>
+            <div class="form-group">
+                <label for="cardholder_name">Cardholder Name:</label>
+                <input type="text" id="cardholder_name" name="cardholder_name" value="John Doe">
+            </div>
+        </div>
+
+        <button type="submit">Submit Registration</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'none';
+            
+            // Collect form data
+            const formData = new FormData(this);
+            const data = {};
+            
+            // Convert form data to object
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            // Structure data for API
+            const registrationData = {
+                pilgrimage_id: parseInt(data.pilgrimage_id),
+                trip_title: data.trip_title,
+                trip_price: parseFloat(data.trip_price),
+                customer_notes: data.customer_notes,
+                passengers: [{
+                    title: data.title,
+                    first_name: data.first_name,
+                    last_name: data.last_name,
+                    date_of_birth: data.date_of_birth,
+                    gender: data.gender,
+                    phone: data.phone,
+                    email: data.email,
+                    address: data.address,
+                    city: data.city,
+                    state: data.state,
+                    zip: data.zip,
+                    country_id: parseInt(data.country_id),
+                    passport_number: data.passport_number,
+                    passport_exp: data.passport_exp,
+                    passport_country_id: parseInt(data.passport_country_id),
+                    emergency_contact_name: data.emergency_contact_name,
+                    emergency_contact_relationship: data.emergency_contact_relationship,
+                    emergency_contact_phone: data.emergency_contact_phone,
+                    dietary_restrictions: "",
+                    medical_conditions: "",
+                    special_requests: "",
+                    is_primary: true
+                }],
+                payment: {
+                    payment_type: data.payment_type,
+                    payment_plan: data.payment_plan,
+                    total_amount: parseFloat(data.total_amount),
+                    credit_card_number: data.credit_card_number,
+                    exp_month: data.exp_month,
+                    exp_year: data.exp_year,
+                    cvv: data.cvv,
+                    cardholder_name: data.cardholder_name
+                }
+            };
+            
+            try {
+                console.log('Sending registration data:', registrationData);
+                
+                const response = await fetch('http://127.0.0.1:8000/api/registration/submit/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': 'test'  // For testing purposes
+                    },
+                    body: JSON.stringify(registrationData)
+                });
+                
+                const result = await response.json();
+                
+                resultDiv.style.display = 'block';
+                if (response.ok) {
+                    resultDiv.className = 'success';
+                    resultDiv.innerHTML = '<strong>Success! Registration Completed! 🎉</strong><br><br>' + 
+                        '<div style="background-color: #e8f5e8; padding: 15px; border-radius: 5px; margin: 10px 0;">' +
+                        '<h4 style="margin: 0 0 10px 0; color: #2c5530;">📧 What happens next:</h4>' +
+                        '<ul style="margin: 0; padding-left: 20px;">' +
+                        '<li><strong>Confirmation Email:</strong> You will receive a detailed confirmation email with your registration details</li>' +
+                        '<li><strong>Admin Notification:</strong> Our team has been notified and will contact you within 24 hours</li>' +
+                        '<li><strong>Welcome Packet:</strong> Additional trip information will be sent via email</li>' +
+                        '<li><strong>Final Details:</strong> Complete travel documents will arrive 30 days before departure</li>' +
+                        '</ul>' +
+                        '</div>' +
+                        '<pre style="font-size: 12px; background-color: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 10px;">' + 
+                        JSON.stringify(result, null, 2) + '</pre>';
+                } else {
+                    resultDiv.className = 'error';
+                    resultDiv.innerHTML = '<strong>Error!</strong><br>' + JSON.stringify(result, null, 2);
+                }
+                
+                console.log('Response:', result);
+                
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = '<strong>Network Error!</strong><br>' + error.message;
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

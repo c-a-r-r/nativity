@@ -114,7 +114,40 @@
         </div>
         <div class="col-12 col-md-4">
           <label class="form-label">Assigned User</label>
-          <input class="form-control" :value="currentUser.username" readonly />
+          <input 
+            class="form-control" 
+            :value="form.assigned_user_name || 'No user assigned'" 
+            readonly 
+          />
+          <small v-if="form.user_id" class="text-muted">
+            User ID: {{ form.user_id }}
+          </small>
+        </div>
+      </div>
+
+      <!-- Account Manager and Sales Agent Row -->
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label">Account Manager</label>
+          <input 
+            class="form-control" 
+            :value="form.account_manager_name || 'No account manager assigned'" 
+            readonly 
+          />
+          <small v-if="form.manager_id" class="text-muted">
+            Manager ID: {{ form.manager_id }}
+          </small>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Sales Agent</label>
+          <input 
+            class="form-control" 
+            :value="form.sales_agent_name || 'No sales agent assigned'" 
+            readonly 
+          />
+          <small v-if="form.agent_id" class="text-muted">
+            Agent ID: {{ form.agent_id }}
+          </small>
         </div>
       </div>
 

@@ -26,7 +26,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         print('DEBUG: Partial update request.data:', request.data)
         return super().partial_update(request, *args, **kwargs)
-    queryset = Quote.objects.all().order_by('id')
+    queryset = Quote.objects.select_related('client', 'workflow_status_rel', 'departure_city_id').all().order_by('id')
     serializer_class = QuoteSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = QuotePagination
@@ -41,7 +41,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
     }
 
     def get_queryset(self):
-        qs = super().get_queryset().order_by('-date_created')  # Default ordering: newest first
+        qs = super().get_queryset().select_related('client', 'workflow_status_rel', 'departure_city_id').order_by('-date_created')  # Default ordering: newest first
 
         # 1. Status filter
         slug = (self.request.GET.get("status") or "all").lower().strip()

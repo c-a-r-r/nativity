@@ -24,7 +24,13 @@ urlpatterns = [
 
     path('api/current-user/', current_user, name='current-user'),
 
-    # # -- marketing module:
+    # -- customer portal endpoints:
+    path('api/customer/', include('customer_portal.urls')),
+
+    # -- trip registration endpoints:
+    path('api/registration/', include('trip_registration.urls')),
+
+    # -- marketing module:
     path('admin/', admin.site.urls),
     path('api/quotes/', include('quotes.urls')),
     path('api/contacts/', include('contacts.urls')),

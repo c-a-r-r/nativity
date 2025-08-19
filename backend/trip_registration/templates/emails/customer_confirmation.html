@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Confirmation - Nativity Pilgrimage</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #2c5530;
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .trip-details {
+            background-color: #f8f9fa;
+            border-left: 4px solid #2c5530;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .passenger-info {
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            background-color: #fff;
+        }
+        .passenger-info h4 {
+            margin: 0 0 10px 0;
+            color: #2c5530;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        .info-label {
+            font-weight: bold;
+            min-width: 120px;
+            color: #666;
+        }
+        .info-value {
+            color: #333;
+        }
+        .payment-summary {
+            background-color: #e8f5e8;
+            border: 1px solid #c3e6c3;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .payment-summary h3 {
+            margin: 0 0 15px 0;
+            color: #2c5530;
+        }
+        .total-amount {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c5530;
+        }
+        .next-steps {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #2c5530;
+            color: white;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .btn:hover {
+            background-color: #1e3a21;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🙏 Registration Confirmed!</h1>
+            <p>Thank you for registering for your pilgrimage</p>
+        </div>
+        
+        <div class="content">
+            <p>Dear {{ primary_passenger.title }} {{ primary_passenger.last_name }},</p>
+            
+            <p>We are delighted to confirm your registration for the <strong>{{ trip_title }}</strong>. Your spiritual journey awaits!</p>
+            
+            <div class="trip-details">
+                <h3>🛤️ Trip Details</h3>
+                <div class="info-row">
+                    <span class="info-label">Trip:</span>
+                    <span class="info-value">{{ trip_title }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Registration ID:</span>
+                    <span class="info-value">#{{ registration_id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Registration Date:</span>
+                    <span class="info-value">{{ registration_date }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Number of Passengers:</span>
+                    <span class="info-value">{{ passengers|length }}</span>
+                </div>
+            </div>
+
+            <h3>👥 Registered Passengers</h3>
+            {% for passenger in passengers %}
+            <div class="passenger-info">
+                <h4>Passenger {{ forloop.counter }}{% if passenger.is_primary %} (Primary Contact){% endif %}</h4>
+                <div class="info-row">
+                    <span class="info-label">Name:</span>
+                    <span class="info-value">{{ passenger.title }} {{ passenger.first_name }} {{ passenger.last_name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Date of Birth:</span>
+                    <span class="info-value">{{ passenger.date_of_birth }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">{{ passenger.email }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Phone:</span>
+                    <span class="info-value">{{ passenger.phone }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Passport #:</span>
+                    <span class="info-value">{{ passenger.passport_number }} (expires {{ passenger.passport_exp }})</span>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="payment-summary">
+                <h3>💳 Payment Summary</h3>
+                <div class="info-row">
+                    <span class="info-label">Trip Price:</span>
+                    <span class="info-value">${{ trip_price }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Processing Fee (3%):</span>
+                    <span class="info-value">${{ processing_fee }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Payment Type:</span>
+                    <span class="info-value">{{ payment_type_display }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Payment Plan:</span>
+                    <span class="info-value">{{ payment_plan_display }}</span>
+                </div>
+                <hr>
+                <div class="info-row total-amount">
+                    <span class="info-label">Total Amount:</span>
+                    <span class="info-value">${{ total_amount }}</span>
+                </div>
+            </div>
+
+            <div class="next-steps">
+                <h3>📋 Next Steps</h3>
+                <ol>
+                    <li><strong>Check your documents:</strong> Ensure all passports are valid for at least 6 months from travel date</li>
+                    <li><strong>Travel Insurance:</strong> We recommend purchasing travel insurance (optional but advised)</li>
+                    <li><strong>Pre-trip Information:</strong> You'll receive detailed trip information 60 days before departure</li>
+                    <li><strong>Final Documents:</strong> Travel documents and instructions will be sent 30 days before departure</li>
+                </ol>
+            </div>
+
+            {% if customer_notes %}
+            <div class="trip-details">
+                <h3>📝 Your Notes</h3>
+                <p>{{ customer_notes }}</p>
+            </div>
+            {% endif %}
+
+            <p>If you have any questions or need to make changes to your registration, please contact us immediately:</p>
+            
+            <p style="text-align: center;">
+                <strong>📞 Phone:</strong> (555) 123-4567<br>
+                <strong>📧 Email:</strong> info@nativitypilgrimage.com<br>
+                <strong>🌐 Website:</strong> www.nativitypilgrimage.com
+            </p>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{ frontend_url }}/customer/dashboard" class="btn">View Your Dashboard</a>
+            </div>
+
+            <p>We look forward to accompanying you on this sacred journey!</p>
+            
+            <p>Blessings,<br>
+            <strong>The Nativity Pilgrimage Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated confirmation email. Please save this email for your records.</p>
+            <p>© {{ current_year }} Nativity Pilgrimage. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

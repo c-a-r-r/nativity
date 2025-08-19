@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Registration Alert - Nativity Pilgrimage Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #dc3545;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .alert-badge {
+            background-color: #ffc107;
+            color: #212529;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c5530;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .trip-details {
+            background-color: #e8f5e8;
+            border-left: 4px solid #2c5530;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .passenger-info {
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            background-color: #fff;
+        }
+        .passenger-info h4 {
+            margin: 0 0 10px 0;
+            color: #2c5530;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 5px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        .info-label {
+            font-weight: bold;
+            min-width: 120px;
+            color: #666;
+        }
+        .info-value {
+            color: #333;
+        }
+        .payment-summary {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .urgent-action {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 5px;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 NEW REGISTRATION ALERT</h1>
+            <div class="alert-badge">IMMEDIATE ATTENTION REQUIRED</div>
+        </div>
+        
+        <div class="content">
+            <h2>New Trip Registration Received</h2>
+            <p><strong>Registration Time:</strong> {{ registration_date }}</p>
+            
+            <div class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-number">{{ passengers|length }}</div>
+                    <div class="stat-label">Passengers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${{ total_amount }}</div>
+                    <div class="stat-label">Total Amount</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ payment_type_display }}</div>
+                    <div class="stat-label">Payment Method</div>
+                </div>
+            </div>
+
+            <div class="trip-details">
+                <h3>🛤️ Trip Information</h3>
+                <div class="info-row">
+                    <span class="info-label">Trip:</span>
+                    <span class="info-value">{{ trip_title }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Registration ID:</span>
+                    <span class="info-value">#{{ registration_id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Pilgrimage ID:</span>
+                    <span class="info-value">{{ pilgrimage_id }}</span>
+                </div>
+            </div>
+
+            <h3>👤 Primary Contact</h3>
+            {% for passenger in passengers %}
+                {% if passenger.is_primary %}
+                <div class="passenger-info">
+                    <h4>{{ passenger.title }} {{ passenger.first_name }} {{ passenger.last_name }}</h4>
+                    <div class="info-grid">
+                        <div>
+                            <div class="info-row">
+                                <span class="info-label">Email:</span>
+                                <span class="info-value">{{ passenger.email }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Phone:</span>
+                                <span class="info-value">{{ passenger.phone }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">DOB:</span>
+                                <span class="info-value">{{ passenger.date_of_birth }}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="info-row">
+                                <span class="info-label">Address:</span>
+                                <span class="info-value">{{ passenger.address }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">City/State:</span>
+                                <span class="info-value">{{ passenger.city }}, {{ passenger.state }} {{ passenger.zip }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Passport:</span>
+                                <span class="info-value">{{ passenger.passport_number }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+
+            <h3>👥 All Passengers ({{ passengers|length }})</h3>
+            {% for passenger in passengers %}
+            <div class="passenger-info">
+                <h4>{{ forloop.counter }}. {{ passenger.title }} {{ passenger.first_name }} {{ passenger.last_name }}{% if passenger.is_primary %} (Primary){% endif %}</h4>
+                <div class="info-grid">
+                    <div>
+                        <div class="info-row">
+                            <span class="info-label">Email:</span>
+                            <span class="info-value">{{ passenger.email }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Phone:</span>
+                            <span class="info-value">{{ passenger.phone }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">DOB:</span>
+                            <span class="info-value">{{ passenger.date_of_birth }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Gender:</span>
+                            <span class="info-value">{{ passenger.gender }}</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="info-row">
+                            <span class="info-label">Passport:</span>
+                            <span class="info-value">{{ passenger.passport_number }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Passport Exp:</span>
+                            <span class="info-value">{{ passenger.passport_exp }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Emergency:</span>
+                            <span class="info-value">{{ passenger.emergency_contact_name }} ({{ passenger.emergency_contact_relationship }})</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Emergency Phone:</span>
+                            <span class="info-value">{{ passenger.emergency_contact_phone }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% if passenger.dietary_restrictions %}
+                <div class="info-row">
+                    <span class="info-label">Dietary:</span>
+                    <span class="info-value">{{ passenger.dietary_restrictions }}</span>
+                </div>
+                {% endif %}
+                {% if passenger.medical_conditions %}
+                <div class="info-row">
+                    <span class="info-label">Medical:</span>
+                    <span class="info-value">{{ passenger.medical_conditions }}</span>
+                </div>
+                {% endif %}
+                {% if passenger.special_requests %}
+                <div class="info-row">
+                    <span class="info-label">Special Requests:</span>
+                    <span class="info-value">{{ passenger.special_requests }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="payment-summary">
+                <h3>💳 Payment Details</h3>
+                <div class="info-row">
+                    <span class="info-label">Trip Price:</span>
+                    <span class="info-value">${{ trip_price }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Processing Fee:</span>
+                    <span class="info-value">${{ processing_fee }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><strong>Total Amount:</strong></span>
+                    <span class="info-value"><strong>${{ total_amount }}</strong></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Payment Type:</span>
+                    <span class="info-value">{{ payment_type_display }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Payment Plan:</span>
+                    <span class="info-value">{{ payment_plan_display }}</span>
+                </div>
+                {% if payment_type == 'cc' %}
+                <div class="info-row">
+                    <span class="info-label">Card (Last 4):</span>
+                    <span class="info-value">****{{ credit_card_last4 }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if customer_notes %}
+            <div class="trip-details">
+                <h3>📝 Customer Notes</h3>
+                <p><em>"{{ customer_notes }}"</em></p>
+            </div>
+            {% endif %}
+
+            <div class="urgent-action">
+                <h3>🎯 Required Actions</h3>
+                <ol>
+                    <li><strong>Verify Payment:</strong> Check payment processing status immediately</li>
+                    <li><strong>Update Capacity:</strong> Adjust available spots for this pilgrimage</li>
+                    <li><strong>Customer Contact:</strong> Send welcome packet within 24 hours</li>
+                    <li><strong>Documentation:</strong> Review passport information for compliance</li>
+                    <li><strong>Special Needs:</strong> Address any dietary/medical requirements</li>
+                </ol>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{ admin_url }}/admin/trip_registration/" class="btn btn-success">View in Admin</a>
+                <a href="mailto:{{ primary_email }}?subject=Welcome to {{ trip_title }}" class="btn">Email Customer</a>
+                <a href="tel:{{ primary_phone }}" class="btn btn-danger">Call Customer</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Nativity Pilgrimage Admin System</strong></p>
+            <p>Registration received at {{ registration_date }} - Handle promptly!</p>
+        </div>
+    </div>
+</body>
+</html>

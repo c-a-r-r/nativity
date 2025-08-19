@@ -5,8 +5,17 @@
       <div class="top-bar"></div>
       <nav class="nav">
         <a href="/" class="logo">VIZITOR</a>
-        <a href="#" class="signin">SIGN&nbsp;IN</a>
-        <a href="#" class="register">REGISTER</a>
+        <div class="auth-buttons" v-if="!isCustomerAuthenticated">
+          <a href="#" class="signin" @click="showAuthModalHandler('login')">SIGN&nbsp;IN</a>
+          <a href="#" class="register" @click="showAuthModalHandler('register')">REGISTER</a>
+        </div>
+        <div class="customer-menu" v-else>
+          <span class="customer-greeting">Hello, {{ currentCustomer?.first_name }}!</span>
+          <button @click="showAccountModal = true" class="account-btn">
+            <i class="fa-solid fa-user"></i>
+            My Account
+          </button>
+        </div>
       </nav>
     </header>
 
@@ -246,7 +255,9 @@
           <div class="reg-content">
             <h3>Register Online</h3>
             <p>Fill the form online and upload a copy of your passport. We accept all major Credit/Debit cards (3% fee applies).</p>
-            <a href="#" class="reg-button" @click="handleRegistration">Register Now</a>
+            <a href="#" class="reg-button" @click="handleRegistration">
+              {{ isCustomerAuthenticated ? 'Register for Trip' : 'Sign In to Register' }}
+            </a>
           </div>
         </div>
 
@@ -303,11 +314,36 @@
         <p>&copy; 2025 VIZITOR. All rights reserved.</p>
       </div>
     </footer>
+
+    <!-- Authentication Modal -->
+    <CustomerAuthModal
+      v-if="showAuthModal"
+      :initial-mode="authModalMode"
+      @close="closeAuthModal"
+      @authenticated="handleAuthenticated"
+    />
+
+    <!-- Customer Account Modal -->
+    <div v-if="showAccountModal" class="account-modal-overlay" @click="showAccountModal = false">
+      <div class="account-modal" @click.stop>
+        <CustomerAccount />
+        <button class="close-account-modal" @click="showAccountModal = false">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useCustomerAuth } from '../../customer_portal/composables/useCustomerAuth'
+import CustomerAuthModal from '../../customer_portal/components/CustomerAuthModal.vue'
+import CustomerAccount from '../../customer_portal/components/CustomerAccount.vue'
+
+// Router
+const router = useRouter()
 
 // Props
 const props = defineProps({
@@ -317,6 +353,15 @@ const props = defineProps({
     default: () => ({})
   }
 })
+
+// Customer authentication
+const { currentCustomer, isAuthenticated } = useCustomerAuth()
+const isCustomerAuthenticated = computed(() => isAuthenticated())
+
+// Modal state
+const showAuthModal = ref(false)
+const authModalMode = ref('login') // 'login' or 'register'
+const showAccountModal = ref(false)
 
 // Reactive data
 const activeTab = ref('details')
@@ -503,13 +548,41 @@ const downloadBrochure = () => {
 }
 
 const handleRegistration = () => {
-  // TODO: Implement registration logic
-  console.log('Registration clicked')
+  console.log('Registration clicked!')
+  console.log('Is authenticated:', isCustomerAuthenticated.value)
+  console.log('Trip ID:', props.trip.id)
+  console.log('Full trip object:', props.trip)
+  
+  if (isCustomerAuthenticated.value) {
+    // Customer is logged in, proceed with trip registration
+    // Navigate to registration form
+    console.log('Navigating to:', `/trips/register/${props.trip.id}`)
+    router.push(`/trips/register/${props.trip.id}`)
+  } else {
+    // Customer needs to log in first
+    console.log('Not authenticated, showing auth modal')
+    showAuthModalHandler('register')
+  }
 }
 
 const handleInsurance = () => {
   // TODO: Implement insurance logic
   console.log('Insurance clicked')
+}
+
+// Modal handlers
+const showAuthModalHandler = (mode = 'login') => {
+  authModalMode.value = mode
+  showAuthModal.value = true
+}
+
+const closeAuthModal = () => {
+  showAuthModal.value = false
+}
+
+const handleAuthenticated = (user) => {
+  console.log('User authenticated:', user)
+  // Modal will close automatically
 }
 
 const getContactPhone = () => {
@@ -544,4 +617,106 @@ onMounted(() => {
 
 <style scoped>
 @import '@/shared/styles/trip-template.css';
+
+/* Customer Authentication Styles */
+.customer-menu {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.customer-greeting {
+  color: #333;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.account-btn {
+  background: #4a90e2;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.account-btn:hover {
+  background: #357abd;
+}
+
+.account-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+  padding: 20px;
+}
+
+.account-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.close-account-modal {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  color: #666;
+  transition: background-color 0.2s;
+  z-index: 10;
+}
+
+.close-account-modal:hover {
+  background: #e9ecef;
+}
+
+@media (max-width: 768px) {
+  .customer-menu {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  
+  .customer-greeting {
+    font-size: 12px;
+  }
+  
+  .account-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .account-modal {
+    margin: 10px;
+    max-height: calc(100vh - 20px);
+  }
+}
 </style>

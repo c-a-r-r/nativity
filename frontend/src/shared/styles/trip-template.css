@@ -3,7 +3,7 @@
 /* ══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
 :root {
   /* Primary Colors */
-  --primary-color: #009dac; /* Main brand color #00b5c6*/
+  --primary-color: #203e6b; /* Main brand color #00b5c6*/
   --primary-hover: #009aab;
   --primary-light: #21afbc;
   --primary-dark: #0891a3;
@@ -98,6 +98,7 @@ header {
   height: 80px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   background: var(--white);
   padding: 0 2rem;
 }
